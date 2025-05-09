@@ -1,0 +1,172 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* body{
+  overflow: hidden;
+} */
+.custom-shadow {
+    box-shadow:
+        rgba(145, 158, 171, 0.3) 0px 0px 2px 0px,
+        rgba(145, 158, 171, 0.12) 0px 12px 24px -4px;
+}
+
+.formInput {
+    @apply border-[#DFE5EF] outline-none transition-colors duration-150 ease-in-out focus:border-textBlue;
+}
+
+::-webkit-scrollbar {
+    width: 9px;
+    /* width of the entire scrollbar */
+}
+
+/* Track (background of the scrollbar) */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    /* light gray background */
+}
+
+/* Handle (scroll thumb) */
+::-webkit-scrollbar-thumb {
+    background-color: #5d87ff;
+    /* dark gray scroll thumb */
+    border-radius: 10px;
+    /* rounded corners */
+    border: 3px solid #f1f1f1;
+    /* adds space around thumb */
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    /* darker gray when hovered */
+}
+
+@keyframes dropTop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.hide-outline {
+    @apply outline-none;
+}
+
+.popup-animation {
+    animation: dropTop ease-in-out;
+    animation-duration: 200ms;
+}
+
+.checkbox-input input {
+    @apply cursor-pointer rounded;
+}
+
+input textarea {
+    @apply border-gray-300;
+}
+
+.custom-select {
+    @apply rounded border border-gray-300 text-sm text-gray-500;
+}
+
+.timetable-student-lesson > div:nth-child(2) {
+    @apply border-t pt-1;
+}
+
+.tab-list > a:first-child {
+    @apply pl-0;
+}
+.tab-list > li:first-child {
+    @apply pl-0;
+}
+.small-text-input > input {
+    font-size: 12px;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Hide spinner controls in Firefox */
+input[type='number'] {
+    -moz-appearance: textfield;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Edge (WebKit) */
+}
+
+.popup-animation {
+    opacity: 0;
+    transform: scale(0.9);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+.popup-animation.fade-in {
+    opacity: 1;
+    transform: scale(1);
+}
+.popup-animation.fade-out {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.table-header {
+    @apply grid grid-cols-12 items-center bg-tableTop px-3 py-4;
+}
+.table-item {
+    @apply grid grid-cols-12 items-center border-t p-3;
+}
+@font-face {
+    font-display: swap;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    transition: background-color 9999s ease-in-out 0s;
+    -webkit-text-fill-color: #000 !important; /* Ensures text color is correct */
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.1s ease-in-out;
+}
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+}

@@ -1,0 +1,39 @@
+import { Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import LoadingIndicator from '../../Status/LoadingIndicator';
+
+import AdmissionListPage from '../../../pages/Admission/AdmissionList';
+import Major from '../../../pages/Major/MajorList';
+import AdmissionLayout from '../../AdmissionLayout/AdmissionLayout';
+import ExamListPage from '../../../pages/Exam/ExamList';
+import AdmissionPlaceListPage from '../../../pages/AdmissionPlace/AdmissionPlaceList';
+import AddAdmissionPlacesPage from '../../../pages/AdmissionPlace/AddAdmissionPlace';
+import EditAdmissionPlacesPage from '../../../pages/AdmissionPlace/EditAdmissionPlace';
+import AdmissionStaffList from '../../../pages/AdmissionStaff/AdmissionStaff';
+import AddAdmissionStaffPage from '../../../pages/AdmissionStaff/AddAdmissionStaff';
+import EditAdmissionStaffPage from '../../../pages/AdmissionStaff/EditAdmissionStaff';
+
+
+const AdmissionRoutes = () => {
+  return (
+    <Suspense fallback={<LoadingIndicator />}>
+      <Routes>
+        <Route path='list' element={<AdmissionListPage />} />
+        <Route path=':admission_id' element={<AdmissionLayout />}>
+          <Route path='majors' element={<Major />} />
+          <Route path='exams' element={<ExamListPage/>}/>
+          <Route path='place' element={<AdmissionPlaceListPage/>}/> 
+          <Route path='staff' element={<AdmissionStaffList/>}/>
+        </Route> 
+        {/**Admission Place */}
+        <Route path=":admission_id/place/add" element={<AddAdmissionPlacesPage />} />
+        <Route path=':admission_id/place/:place_id/edit' element={<EditAdmissionPlacesPage/>}/>
+        {/**Admission Staff */}
+        <Route path=":admission_id/staff/add" element={<AddAdmissionStaffPage />} />
+        <Route path=':admission_id/staff/:staff_id/edit' element={<EditAdmissionStaffPage/>}/>
+      </Routes>
+    </Suspense>
+  );
+};
+
+export default AdmissionRoutes;
