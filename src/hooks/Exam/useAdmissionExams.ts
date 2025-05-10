@@ -15,10 +15,10 @@ export interface Admission {
     major_name: string;
     order_number: number;
     quota: number;
-    exams: IExam;
+    exams: IExam[];
   }
   
-  export interface IExam {
+  export interface IExam{
     id: number;
     subject: string;
   }
@@ -32,7 +32,7 @@ const getAdmissionExams = async (
 };
 
 
-export const useAdmissionExams = (id: number) => {
+export const  useAdmissionExams = (id: number) => {
   return useQuery<Admission, Error>({
     queryKey: ['admission_exams', id],
     queryFn: () => getAdmissionExams(id),

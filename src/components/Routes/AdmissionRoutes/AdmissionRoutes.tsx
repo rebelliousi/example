@@ -5,13 +5,14 @@ import LoadingIndicator from '../../Status/LoadingIndicator';
 import AdmissionListPage from '../../../pages/Admission/AdmissionList';
 import Major from '../../../pages/Major/MajorList';
 import AdmissionLayout from '../../AdmissionLayout/AdmissionLayout';
-import ExamListPage from '../../../pages/Exam/ExamList';
+import ExamListPage from '../../../pages/Exam/AdmissionExamList';
 import AdmissionPlaceListPage from '../../../pages/AdmissionPlace/AdmissionPlaceList';
 import AddAdmissionPlacesPage from '../../../pages/AdmissionPlace/AddAdmissionPlace';
 import EditAdmissionPlacesPage from '../../../pages/AdmissionPlace/EditAdmissionPlace';
 import AdmissionStaffList from '../../../pages/AdmissionStaff/AdmissionStaff';
 import AddAdmissionStaffPage from '../../../pages/AdmissionStaff/AddAdmissionStaff';
 import EditAdmissionStaffPage from '../../../pages/AdmissionStaff/EditAdmissionStaff';
+import AddAdmissionExamPage from '../../../pages/Exam/AddAdmissionExam';
 
 
 const AdmissionRoutes = () => {
@@ -31,6 +32,9 @@ const AdmissionRoutes = () => {
         {/**Admission Staff */}
         <Route path=":admission_id/staff/add" element={<AddAdmissionStaffPage />} />
         <Route path=':admission_id/staff/:staff_id/edit' element={<EditAdmissionStaffPage/>}/>
+        {/**Admission Exam*/}
+        <Route path=":admission_id/exams/add" element={<AddAdmissionExamPage />} />
+
       </Routes>
     </Suspense>
   );

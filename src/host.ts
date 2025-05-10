@@ -1,4 +1,4 @@
-export const host = 'http://192.168.0.106:8001/api/v1';
+export const host = 'http://192.168.0.105:8001/api/v1';
 
 // 'http://91.210.171.68:5002/api/v1';
 

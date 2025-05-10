@@ -19,6 +19,11 @@ export interface IAdmission {
   end_date: string;
 }
 
+export interface IAdmissionSubject{
+  id:number;
+  name:string;
+}
+
 export interface IAdmissionPlaces{
   admission: number;
   address: string;
@@ -71,7 +76,7 @@ export interface IAcademicYear {
 export interface IAdmissionMajor {
   id: number;
   major: number;
-  major_name: string;
+  major_name?: string;
   order_number: number;
   quota: number;
   

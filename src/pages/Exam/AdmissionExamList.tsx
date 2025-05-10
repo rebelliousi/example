@@ -1,9 +1,10 @@
 import PlusIcon from '../../assets/icons/PlusIcon';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 import TableLayout from '../../components/Table/TableLayout';
-import { useParams } from 'react-router-dom';
-import { useAdmissionExams } from '../../hooks/Exam/useAdmissionExams';
+import { Link, useParams } from 'react-router-dom';
+
 import AdmissionExamListItem from '../../components/Exam/ExamListItem';
+import { useAdmissionExams } from '../../hooks/Exam/useAdmissionExams';
 
 
 const AdmissionExamListPage = () => {
@@ -18,12 +19,12 @@ const AdmissionExamListPage = () => {
   return (
     <div>
       <div className="flex justify-start mb-4">
-        <button
+        <Link  to={`/admissions/${admission_id}/exams/add`}
           className="bg-blue-500 w-[100px] text-sm text-white px-2 py-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
         >
           <PlusIcon className="mr-2" />
           <span>Add</span>
-        </button>
+        </Link>
       </div>
 
       <TableLayout>
