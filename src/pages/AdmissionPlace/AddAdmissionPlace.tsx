@@ -49,7 +49,7 @@ const AddAdmissionPlacesPage = () => {
     setPlaces(newPlaces);
   };
 
-  const handleSave = async () => {
+  const handleAdd = async () => {
     try {
       if (!admission_id) return;
       for (const place of places) {
@@ -147,11 +147,11 @@ const AddAdmissionPlacesPage = () => {
       Cancel
     </LinkButton>
     <button
-      onClick={handleSave}
+      onClick={handleAdd}
       disabled={isPending}
       className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
     >
-      {isPending ? 'Saving...' : 'Save'}
+      {isPending ? 'Adding...' : 'Add'}
     </button>
   </div>
 </div>

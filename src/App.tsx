@@ -9,6 +9,8 @@ import LoadingIndicator from "./components/Status/LoadingIndicator"
 import Welcome from "./pages/Welcome/Welcome"
 import AdmissionRoutes from "./components/Routes/AdmissionRoutes/AdmissionRoutes"
 import ExamSubjectsPage from "./pages/ExamSubjects/ExamSubjectsList"
+import ApplicationListPage from "./pages/ApplicationLIst/ApplicationLIstPage"
+import AddApplicationPage from "./pages/ApplicationLIst/AddApplicationList"
 
 
 const App:React.FC=()=>{
@@ -30,6 +32,11 @@ const App:React.FC=()=>{
                 }/>
    <Route path="/admissions/*" element={<AdmissionRoutes/>}/>
    <Route path="/exam_subjects" element={<ExamSubjectsPage/>}/>
+
+
+
+   <Route path="/application_list" element={<ApplicationListPage/>}/>
+   <Route path="/application_list/add" element={<AddApplicationPage />} />
 
                 </Route>
 

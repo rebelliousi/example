@@ -322,7 +322,7 @@ const AddAdmissionExamPage = () => {
                     ) : (
                          
                          <div className="text-center text-gray-500">
-                             {isLoadingMajor || isLoadingSubjects || isLoadingRegions ? "Loading data..." : "Required data (majors, subjects, or regions) not available to display the form."}
+                            
                          </div>
                     )}
 
