@@ -12,6 +12,12 @@ export interface IPagination<T> {
   results: T[]; 
 }
 
+
+export interface IExamSubjects{
+  id:number;
+  name:string;
+}
+
 export interface IAdmission {
   id?: number |string;
   academic_year: number;

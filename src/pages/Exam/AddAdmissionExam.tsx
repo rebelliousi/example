@@ -252,20 +252,17 @@ const AddAdmissionExamPage = () => {
                     <div className="mb-6">
                         <label className="block text-sm font-medium mb-1 text-formInputText">Major</label>
                  
-                        {canRenderTable ? (
                             <Select
                                 value={selectedMajorId === null ? 0 : selectedMajorId}
                                 onChange={handleMajorChange}
                                 className="w-96 h-auto rounded focus:outline-none text-gray-600 bg-white"
                             >
                                 <Select.Option value={0}>Select a major</Select.Option>
-                                {majorData.results.map(m => (
+                                {majorData?.results.map(m => (
                                     <Select.Option key={m.id} value={m.id}>{m.major}</Select.Option>
                                 ))}
                             </Select>
-                         ) : (
-                             <div className="text-gray-500">Loading majors...</div> 
-                         )}
+                      
                     </div>
 
               

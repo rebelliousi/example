@@ -15,6 +15,7 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ exam, index }) 
   const { mutate } = useDeleteAdmissionExamById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
   const { admission_id } = useParams<{ admission_id: string }>();
+  console.log(admission_id)
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -52,11 +53,15 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ exam, index }) 
       </div>
 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
-        <button
+      {(() => {
+    console.log("exam.id:", exam.id);
+    return null; 
+  })()}
+        <Link    to={`/admissions/${admission_id}/exams/${exam.id}/edit`}
           onClick={(e) => e.stopPropagation()}
         >
           <PencilIcon size={16} />
-        </button>
+        </Link>
 
         <button
           onClick={(e) => {

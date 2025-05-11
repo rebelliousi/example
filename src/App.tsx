@@ -8,6 +8,7 @@ import { Suspense } from "react"
 import LoadingIndicator from "./components/Status/LoadingIndicator"
 import Welcome from "./pages/Welcome/Welcome"
 import AdmissionRoutes from "./components/Routes/AdmissionRoutes/AdmissionRoutes"
+import ExamSubjectsPage from "./pages/ExamSubjects/ExamSubjectsList"
 
 
 const App:React.FC=()=>{
@@ -28,6 +29,8 @@ const App:React.FC=()=>{
                   </Suspense>
                 }/>
    <Route path="/admissions/*" element={<AdmissionRoutes/>}/>
+   <Route path="/exam_subjects" element={<ExamSubjectsPage/>}/>
+
                 </Route>
 
              
