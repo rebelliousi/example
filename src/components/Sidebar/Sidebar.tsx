@@ -30,11 +30,11 @@ const Sidebar: React.FC = () => {
                         <ExampleIcon/>  
                     Admission
                     </Link>
-                    <Link to='/region'
+                    {/* <Link to='/region'
                     className='flex gap-2 items-center  py-3 px-2 hover:bg-primaryBlue w-full rounded-md hover:text-white'>
                         <ExampleIcon/>  
                     Region
-                    </Link>
+                    </Link> */}
                     <Link to='/application_list'
                     className='flex gap-2 items-center  py-3 px-2 hover:bg-primaryBlue w-full rounded-md hover:text-white'>
                         <ExampleIcon/>  

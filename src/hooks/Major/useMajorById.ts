@@ -10,7 +10,7 @@ export interface ExamDate {
     admission_exam: number;
   }
   
-  export interface Exam {e
+  export interface Exam {
     id: number;
     admission_major: number;
     admission_major_name: string;
