@@ -2,13 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api';
 
 export interface ExamDate {
-    region: number;
+    region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary";
     date_of_exam: string;
-  }
+    subject: number;
+}
   
   export interface AdmissionData {
     admission_major: number;
-    subject: number;
     exam_dates: ExamDate[];
   }
 export const useAddAdmissionExam = () => {

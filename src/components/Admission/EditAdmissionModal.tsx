@@ -1,38 +1,100 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEditAdmissionById } from '../../hooks/Admission/useEditAdmission';
 import { useAcademicYear } from '../../hooks/AcademicYear/useAcademicYears.ts';
 import { IAdmission } from '../../models/models';
-import Select from '../InputSelect/Select.tsx'; // Assuming you have a custom Select component
+import Select from '../InputSelect/Select.tsx';
+import { toast } from 'react-hot-toast'; 
 
 interface EditAdmissionModalProps {
   admission: IAdmission;
   onClose: () => void;
 }
 
+const parseToYyyyMmDd = (dateString?: string | null): string => {
+  if (!dateString) return '';
+
+ 
+  if (dateString.includes('-')) {
+    const parts = dateString.split('T')[0].split('-'); 
+    if (parts.length === 3 && parts[0].length === 4 && parts[1].length === 2 && parts[2].length === 2) {
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(parts.join('-'))) {
+          return parts.join('-');
+      }
+    }
+  }
+
+
+  if (dateString.includes('.')) {
+    const parts = dateString.split('.');
+    if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; 
+    }
+  }
+  
+
+  try {
+    const dateObj = new Date(dateString);
+    if (!isNaN(dateObj.getTime())) { 
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {
+   
+  }
+
+  console.warn(`Unparseable date string for input: ${dateString}. Returning empty.`);
+  return ''; // Tanınmayan format
+};
+
+
+
+const formatYyyyMmDdToDdMmYyyyForApi = (dateYyyyMmDd: string): string => {
+  if (!dateYyyyMmDd || !dateYyyyMmDd.includes('-')) return ''; 
+  const parts = dateYyyyMmDd.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}.${parts[1]}.${parts[0]}`; 
+  }
+  return ''; 
+};
+
+
 const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
   admission,
   onClose,
 }) => {
   const { mutate: UpdateAdmission, isPending } = useEditAdmissionById();
-  const { data: academicYears = []} = useAcademicYear(); // Providing a fallback value of [] to avoid undefined
+  const { data: academicYears = [] } = useAcademicYear();
 
-  const [startDate, setStartDate] = useState(admission.start_date);
-  const [endDate, setEndDate] = useState(admission.end_date);
-  const [academicYear, setAcademicYear] = useState<number | null>(admission.academic_year ?? null); // Set initial value to admission.academic_year
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
+  const [startDate, setStartDate] = useState<string>(() => parseToYyyyMmDd(admission.start_date));
+  const [endDate, setEndDate] = useState<string>(() => parseToYyyyMmDd(admission.end_date));
+  const [academicYear, setAcademicYear] = useState<number | null>(admission.academic_year ?? null);
+
+ 
+  useEffect(() => {
+    setStartDate(parseToYyyyMmDd(admission.start_date));
+    setEndDate(parseToYyyyMmDd(admission.end_date));
+    setAcademicYear(admission.academic_year ?? null);
+  }, [admission]);
 
   const handleUpdate = () => {
+    if (academicYear === null) {
+      toast.error('Please select an academic year');
+      return;
+    }
+    if (!startDate || !endDate) {
+        toast.error('Please select start and end dates');
+        return;
+    }
+
+   
     const admissionData: Partial<IAdmission> = {
-      start_date: formatDate(startDate),
-      end_date: formatDate(endDate),
-      academic_year: academicYear ?? 0, // Ensure fallback for null
+      start_date: formatYyyyMmDdToDdMmYyyyForApi(startDate), 
+      end_date: formatYyyyMmDdToDdMmYyyyForApi(endDate),  
+      academic_year: academicYear, 
     };
 
     UpdateAdmission(
@@ -42,10 +104,13 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
       },
       {
         onSuccess: () => {
+          toast.success('Admission successfully updated');
           onClose();
         },
-        onError: (error) => {
-          console.error(error);
+        onError: (error: any) => { 
+          console.error("Update admission error:", error);
+          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update admission';
+          toast.error(errorMessage);
         },
       }
     );
@@ -64,9 +129,9 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               name: `${year.date_start}-${year.date_end} ${year.is_active ? '(Active)' : ''}`,
             }))}
             value={academicYear ?? undefined}
-            onChange={setAcademicYear}
+            onChange={(value) => setAcademicYear(value as number | null)}
             placeholder="Select academic year"
-            className='text-'
+            className='text-gray-500'
           />
         </div>
         <div className="mb-4">
@@ -76,9 +141,9 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
           <input
             id="startDate"
             type="date"
-            className="w-full p-2 border border-formInput rounded-md focus:outline-none"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full p-2 border border-formInput rounded-md focus:outline-none text-gray-500"
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)} 
           />
         </div>
         <div className="mb-4">
@@ -88,9 +153,9 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
           <input
             id="endDate"
             type="date"
-            className="w-full p-2 border border-formInput rounded-md focus:outline-none"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 border border-formInput rounded-md focus:outline-none text-gray-500"
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)} 
           />
         </div>
 
@@ -103,8 +168,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
           </button>
           <button
             onClick={handleUpdate}
-            disabled={isPending}
-            className="bg-blue-500 text-white px-4 py-1 rounded-md hover:bg-blue-600"
+            disabled={isPending || !startDate || !endDate || academicYear === null}
+            className="bg-blue-500 text-white px-4 py-1 rounded-md hover:bg-blue-600 disabled:opacity-50"
           >
             {isPending ? 'Updating...' : 'Save'}
           </button>

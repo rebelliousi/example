@@ -15,7 +15,6 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ exam, index }) 
   const { mutate } = useDeleteAdmissionExamById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
   const { admission_id } = useParams<{ admission_id: string }>();
-  console.log(admission_id)
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -29,11 +28,15 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ exam, index }) 
       }
     });
     setOpen(true);
-  }, [exam, setOpen, setOnSubmit, mutate, setStatus]);
+  }, [exam.id, setOpen, setOnSubmit, mutate, setStatus]);
 
+  // Veriyi incelemek için console.log
+  console.log("Exam:", exam);
+
+  const examCount = 3; // Göstermek istediğimiz sınav sayısı
   return (
     <div className="py-2 group grid cursor-pointer items-center border-t grid-cols-12 hover:bg-listItemHover px-3 text-tableTopText">
-      <div>
+      <div className="col-span-1">
         <h1>{index + 1}</h1>
       </div>
 
@@ -41,24 +44,23 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ exam, index }) 
         <h1>{exam.major_name}</h1>
       </div>
 
-      <div className="col-span-2">
-        <h1 className="line-clamp-2">{exam.exams[0]?.subject}</h1>
-      </div>
-
-      <div className="col-span-2">
-        <h1 className="line-clamp-2">{exam.exams[1]?.subject}</h1>
-      </div>
-      <div className="col-span-2">
-        <h1 className="line-clamp-2">{exam.exams[2]?.subject}</h1>
-      </div>
+      {/* Sınavları ve dersleri dinamik olarak görüntüle */}
+      {Array.from({ length: examCount }, (_, i) => {
+        const examData = exam.exams && exam.exams[i]?.exam_dates && exam.exams[i]?.exam_dates[0];
+        return (
+          <div key={i} className="col-span-2">
+            <h1 className="line-clamp-2">
+              {examData ? examData.subject : '-'}
+            </h1>
+          </div>
+        );
+      })}
 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
-      {(() => {
-    console.log("exam.id:", exam.id);
-    return null; 
-  })()}
-        <Link    to={`/admissions/${admission_id}/exams/${exam.id}/edit`}
+        <Link
+          to={`/admissions/${admission_id}/exams/${exam.id}/edit`}
           onClick={(e) => e.stopPropagation()}
+          className="hover:bg-actionButtonHover rounded-full"
         >
           <PencilIcon size={16} />
         </Link>

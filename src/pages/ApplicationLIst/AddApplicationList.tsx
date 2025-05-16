@@ -344,7 +344,7 @@ export const AddApplicationPage: React.FC<AddApplicationPageProps> = () => {
     if (image3x4File) formData.append('image_3x4_file', image3x4File);
 
     try {
-      await addApplicationToList(formData);
+      await addApplicationToList(formData );
       toast.success('Application successfully submitted!');
       navigate('/');
     } catch (error: any) { // Use 'any' or a more specific error type if known
