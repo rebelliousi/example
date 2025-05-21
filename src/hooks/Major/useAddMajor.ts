@@ -7,6 +7,17 @@ interface MajorFormValues {
   order_number: number;
   quota: number;
   major: number;
+  exams:Exam[]
+}
+interface ExamDate {
+  region: string;
+  date_of_exam: string; 
+  subject: number;
+}
+
+interface Exam {
+  admission_major: number;
+  exam_dates: ExamDate[];
 }
 
 export const useAddMajor = () => {

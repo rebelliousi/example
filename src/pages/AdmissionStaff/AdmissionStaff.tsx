@@ -29,7 +29,6 @@ const AdmissionStaffList = () => {
           <div className="col-span-1">No</div>
           <div className="col-span-2">Name</div>
           <div className="col-span-2">Role</div>
-          <div className="col-span-2">Region</div>
           <div className="col-span-2">Area</div>
           <div className="col-span-2">Address</div>
           <div className="col-span-1"></div>

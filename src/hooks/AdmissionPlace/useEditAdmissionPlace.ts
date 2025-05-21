@@ -2,15 +2,12 @@ import api from '../../api';
 import { useSnackbar } from '../useSnackbar';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-
-
 export interface AdmissionPlaceData {
-    admission: number;
-    address: string;
-    region: number;
-    area: number;
-  }
-  
+  admission: number;
+  address: string;
+
+  area: number;
+}
 
 const editAdmissionPlaceById = async ({
   id,

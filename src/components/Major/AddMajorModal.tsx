@@ -39,7 +39,8 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         admission,
         order_number: orderNumber,
         quota,
-        major,
+        major
+     
       });
 
       queryClient.invalidateQueries({ queryKey: ['major'] });

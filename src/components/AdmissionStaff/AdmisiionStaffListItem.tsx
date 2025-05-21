@@ -57,9 +57,6 @@ const AdmissionStaffListItem: FC<AdmissionStaffListItemProps> = ({ staff, index}
           <h1 className="line-clamp-2">{staff.role}</h1>
         </div>
 
-        <div className="col-span-2">
-          <h1 className="line-clamp-2">{staff.place.region_name}</h1>
-        </div>
 
         <div className="col-span-2">
           <h1 className="line-clamp-2">{staff.place.area_name}</h1>
@@ -69,7 +66,7 @@ const AdmissionStaffListItem: FC<AdmissionStaffListItemProps> = ({ staff, index}
           <h1 className="line-clamp-2">{staff.place.address}</h1>
         </div>
 
-        <div className="col-span-1 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
+        <div className="col-span-3 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
           <Link   to={`/admissions/${admission_id}/staff/${staff.id}/edit`}
            
             className="hover:bg-actionButtonHover rounded-full"

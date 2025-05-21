@@ -6,7 +6,7 @@ import Select from '../../components/InputSelect/Select';
 import Container from '../../components/Container/Container';
 import TrashIcon from '../../assets/icons/TrashIcon';
 import { LinkButton } from '../../components/Buttons/LinkButton';
-import { IPlace, useAdmissionPlaces } from '../../hooks/AdmissionPlace/useAdmissionPlaces';
+
 import { useStaffs } from '../../hooks/Staff/useStaffs';
 import { IStaff } from '../../models/models';
 
@@ -25,7 +25,7 @@ const AddAdmissionStaffPage = () => {
   const { admission_id } = useParams();
   const navigate = useNavigate();
   const { data: staffs } = useStaffs(1);
-  const { data: places } = useAdmissionPlaces(Number(admission_id));
+
   const { mutateAsync, isPending } = useAddAdmissionStaff();
 
   const [staffInputs, setStaffInputs] = useState<StaffInput[]>([
@@ -35,9 +35,7 @@ const AddAdmissionStaffPage = () => {
   const staffOptions =
     staffs?.results.map((s: IStaff) => ({ id: s.id, name: s.name })) || [];
 
-  const placeOptions =
-    places?.places.map((p: IPlace) => ({ id: p.id, name: p.region_name })) || [];
-
+  
   const roleOptions = Object.values(Role).map((role) => ({
     id: role,
     name: role.charAt(0) + role.slice(1).toLowerCase(),
@@ -99,17 +97,7 @@ const AddAdmissionStaffPage = () => {
                 />
               </div>
 
-              {/* Place */}
-              <div className="col-span-4">
-                <label className="block text-sm font-medium mb-1 text-formInputText">Place</label>
-                <Select
-                  value={input.place}
-                  onChange={(value) => handleChange(index, 'place', value)}
-                  placeholder="Select a place"
-                  options={placeOptions}
-                  className='w-[462px]'
-                />
-              </div>
+              
 
               {/* Role */}
               <div className="col-span-3">

@@ -1,0 +1,42 @@
+.custom-select .ant-select-selector {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+.custom-select:hover .ant-select-selector {
+    border: none !important;
+}
+
+.custom-select .ant-select-arrow {
+    color: #888;
+    margin-right: 10px;
+    padding-right:-20px;
+  font-size: 10px;
+}
+
+.custom-select .ant-select-selection-item {
+    padding-left: 5px;
+    text-align: center;
+}
+
+.custom-select:focus .ant-select-selector,
+.custom-select .ant-select-focused .ant-select-selector {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+
+
+
+.ant-picker .ant-picker-suffix {
+    margin-left: 20px; /* İkonu yaklaştırmak için değeri azalt */
+  }
+
+ 
+.ant-picker:focus,
+.ant-picker:active {
+  outline: none !important; /* Odaklanma çerçevesini kaldır */
+  box-shadow: none !important; /* Gölgeyi kaldır */
+  border: none !important; /* Border'ı da kaldır, gerekirse */
+}

@@ -5,8 +5,8 @@ import api from '../../api';
 export interface IAdmissionPlacePost {
   admission: number;
   address: string;
-  region: number;
   area: number;
+
 }
 
 export const useAddAdmissionPlaces = () => {

@@ -3,7 +3,7 @@ import { useAddAdmissionPlaces } from '../../hooks/AdmissionPlace/useAddAdmissio
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { useArea } from '../../hooks/Area/useAreas';
-import { useRegions } from '../../hooks/Regions/useRegions';
+
 import Container from '../../components/Container/Container';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -13,7 +13,6 @@ import PlusIcon from '../../assets/icons/PlusIcon';
 import { LinkButton } from '../../components/Buttons/LinkButton';
 
 type Place = {
-  region: number;
   area: number;
   address: string;
 };
@@ -21,17 +20,18 @@ type Place = {
 const AddAdmissionPlacesPage = () => {
   const navigate=useNavigate()
   const { admission_id } = useParams();
+  console.log(admission_id)
   const { data: areas } = useArea();
-  const { data: regions } = useRegions();
+
   const { mutateAsync, isPending } = useAddAdmissionPlaces();
   const queryClient = useQueryClient();
 
   const [places, setPlaces] = useState<Place[]>([
-    { region: 0, area: 0, address: '' },
+    {  area: 0, address: '' },
   ]);
 
   const handleAddForm = () => {
-    setPlaces([...places, { region: 0, area: 0, address: '' }]);
+    setPlaces([...places, { area: 0, address: '' }]);
   };
 
   const handleRemoveForm = (index: number) => {
@@ -61,7 +61,7 @@ const AddAdmissionPlacesPage = () => {
 
       queryClient.invalidateQueries({ queryKey: ['admission_places'] });
       toast.success('All admission places successfully added');
-      setPlaces([{ region: 0, area: 0, address: '' }]);
+      setPlaces([{  area: 0, address: '' }]);
       navigate(`/admissions/${admission_id}/place`);
     } catch (error) {
       console.error('Error:', error);
@@ -77,16 +77,7 @@ const AddAdmissionPlacesPage = () => {
 
           {places.map((place, index) => (
             <div key={index} className="grid grid-cols-12 gap-4 py-3">
-              {/* Region */}
-              <div className="mb-2 col-span-2">
-                <label className="block font-medium mb-1 text-formInputText text-sm">Region</label>
-                <Select
-                  value={place.region}
-                  onChange={(value) => handleChange(index, 'region', value)}
-                  placeholder="Select a region"
-                  options={regions?.results || []}
-                />
-              </div>
+            
 
               {/* Area */}
               <div className="mb-2 col-span-3">

@@ -1,11 +1,9 @@
+import { Link, useParams } from 'react-router-dom';
 import PlusIcon from '../../assets/icons/PlusIcon';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 import TableLayout from '../../components/Table/TableLayout';
-import { Link, useParams } from 'react-router-dom';
-
 import AdmissionExamListItem from '../../components/Exam/ExamListItem';
 import { useAdmissionExams } from '../../hooks/Exam/useAdmissionExams';
-
 
 const AdmissionExamListPage = () => {
   const { admission_id } = useParams();
@@ -34,22 +32,21 @@ const AdmissionExamListPage = () => {
           <div className="col-span-2">Exam1</div>
           <div className="col-span-2">Exam2</div>
           <div className="col-span-2">Exam3</div>
-         
           <div className="col-span-4"></div>
         </div>
 
-        {isSuccess &&
-                admission?.majors?.map((exam, index) => (
-                  <AdmissionExamListItem
-                    key={exam.id}
-                    exam={exam}
-                    index={index}
-                  />
-                ))}
-              
+     
+
+        {isSuccess && admission?.majors?.map((major, index) => (
+              <AdmissionExamListItem
+                key={major.id} //  `major.id`  benzersiz bir key'dir.
+                major={major}
+                index={index}
+              />
+        ))}
       </TableLayout>
 
-      {isLoading && <LoadingIndicator />}
+       {isLoading && <LoadingIndicator />}
     </div>
   );
 };

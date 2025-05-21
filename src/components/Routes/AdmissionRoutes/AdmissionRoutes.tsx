@@ -14,6 +14,7 @@ import AddAdmissionStaffPage from '../../../pages/AdmissionStaff/AddAdmissionSta
 import EditAdmissionStaffPage from '../../../pages/AdmissionStaff/EditAdmissionStaff';
 import AddAdmissionExamPage from '../../../pages/Exam/AddAdmissionExam';
 import EditAdmissionExamPage from '../../../pages/Exam/EditAdmissionExam';
+import ExamDetail from '../../Exam/ExamDetail';
 
 
 
@@ -36,7 +37,8 @@ const AdmissionRoutes = () => {
         <Route path=':admission_id/staff/:staff_id/edit' element={<EditAdmissionStaffPage/>}/>
         {/**Admission Exam*/}
         <Route path=":admission_id/exams/add" element={<AddAdmissionExamPage />} />
-        <Route path=':admission_id/exams/:exam_id/edit' element={<EditAdmissionExamPage/>}/>
+  <Route path=":admission_id/exams/major/:major_id/edit" element={<EditAdmissionExamPage />} />
+        <Route path=":admission_id/exams/major/:major_id" element={<ExamDetail />} />
 
       </Routes>
     </Suspense>

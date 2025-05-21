@@ -5,8 +5,6 @@ export interface IPlace {
   id: number;
   admission: number;
   address: string;
-  region: number;
-  region_name: string;
   area: number;
   area_name: string;
 }

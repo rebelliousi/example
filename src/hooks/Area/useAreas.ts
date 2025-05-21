@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { IArea, IPagination } from '../../models/models';
+import {  IPagination } from '../../models/models';
 import api from '../../api';
+
+
+export interface IArea {
+  id: number;
+  name: string;
+  type: string; 
+   region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary";
+}
 
 const getArea = async (): Promise<IPagination<IArea>> => {
   const response = await api.get(`/regions/area/`);

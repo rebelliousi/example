@@ -13,6 +13,7 @@ export interface AdmissionMajor {
   }
   
   export interface IApplication {
+    id:number;
     user: User;
     full_name: string;
     admission_major: AdmissionMajor[];

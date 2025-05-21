@@ -37,9 +37,7 @@ const AdmissionPlaceListItem: FC<AdmissionPlaceListItemProps> = ({ place, index 
         <h1>{index + 1}</h1>
       </div>
 
-      <div className="col-span-2">
-        <h1>{place.region_name}</h1>
-      </div>
+    
 
       <div className="col-span-2">
         <h1 className="line-clamp-2">{place.area_name}</h1>
@@ -49,7 +47,7 @@ const AdmissionPlaceListItem: FC<AdmissionPlaceListItemProps> = ({ place, index 
         <h1 className="line-clamp-2">{place.address}</h1>
       </div>
 
-      <div className="col-span-5 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
+      <div className="col-span-7 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
         <Link
           to={`/admissions/${admission_id}/place/${place.id}/edit`}
           onClick={(e) => e.stopPropagation()}

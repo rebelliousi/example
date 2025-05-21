@@ -43,7 +43,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       </div>
 
       <div className="col-span-3">
-        <h1 className="line-clamp-2">{application.admission_major[0].major}</h1>
+        <h1 className="line-clamp-2">{application.admission_major?.[0]?.major|| '-'}</h1>
       </div>
 
       <div className="col-span-1">

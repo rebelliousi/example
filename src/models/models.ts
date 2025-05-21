@@ -62,7 +62,7 @@ export interface IArea {
   id: number;
   name: string;
   type: string; 
-  region: number;
+   region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary";
 }
 
 export interface IRegions {

@@ -30,10 +30,9 @@ const AdmissionPlaceListPage = () => {
       <TableLayout>
         <div className="py-4 grid grid-cols-12 bg-tableTop px-3 text-tableTopText">
           <div className="col-span-1">No</div>
-          <div className="col-span-2">Region</div>
           <div className="col-span-2">Area</div>
           <div className="col-span-2">Address</div>
-          <div className="col-span-3"></div>
+          <div className="col-span-5"></div>
         </div>
 
         {isSuccess && data?.places?.map((place, index) => (

@@ -1,340 +1,378 @@
 import { useEffect, useState } from 'react';
-import { useRegions } from '../../hooks/Regions/useRegions';
 import Container from '../../components/Container/Container';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { LinkButton } from '../../components/Buttons/LinkButton';
-import { DatePicker, Select } from "antd";
+import { DatePicker, Select } from 'antd';
 import TableLayout from '../../components/Table/TableLayout';
 import './AddAdmissionExamPage.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAdmissionSubjects } from '../../hooks/AdmissionSubject/useAdmissionSubject';
 import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
-import dayjs, { Dayjs } from 'dayjs';
-import { useAdmissionExamById } from '../../hooks/Exam/useAdmissionExamById';
-import { ExamDate, useEditAdmissionExamById } from '../../hooks/Exam/useEditAdmissionExam';
+import { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import { AdmissionData, ExamDate, useEditAdmissionExamById } from '../../hooks/Exam/useEditAdmissionExam';
+import { useMajorById } from '../../hooks/Major/useMajorById';
+
+type Region = 'ashgabat' | 'ahal' | 'balkan' | 'dashoguz' | 'lebap' | 'mary';
 
 interface ExamDateFormState {
-  regionId: number;
-  dates: (Dayjs | null)[];
+    region: Region;
+    dates: (Dayjs | null)[];
 }
 
 const formatDate = (date: Dayjs | null): string => {
-  if (!date) return "";
-  return date.format('DD.MM.YYYY');
+    if (!date) return '';
+    return date.format('DD.MM.YYYY');
 };
 
 const EditAdmissionExamPage = () => {
-  const { admission_id, exam_id } = useParams<{ admission_id: string; exam_id: string }>();
-  console.log(exam_id)
+    const { admission_id, major_id } = useParams<{ admission_id: string; major_id: string }>();
+    const navigate = useNavigate();
 
-  const navigate = useNavigate();
+    const {
+        data: majorData,
+        isLoading: isLoadingMajor,
+        error: errorMajor,
+    } = useAdmissionMajor(1);
 
-  // Fetch existing exam data
-  const { data: existingExam, isLoading: isLoadingExisting, error: errorExisting } = useAdmissionExamById(exam_id);
+    const {
+        data: examData,
+        isLoading: isExamDataLoading,
+        error: examDataError
+    } = useMajorById(major_id);
 
-  const { data: majorData, isLoading: isLoadingMajor, error: errorMajor } = useAdmissionMajor(1);
-  const { data: subjectsData, isLoading: isLoadingSubjects, error: errorSubjects } = useAdmissionSubjects(1);
-  const { data: regionsData, isLoading: isLoadingRegions, error: errorRegions } = useRegions();
+    const {
+        data: subjectsData,
+        isLoading: isLoadingSubjects,
+        error: errorSubjects,
+    } = useAdmissionSubjects(1);
 
-  const { mutateAsync, isPending: isUpdating } = useEditAdmissionExamById();
-  const queryClient = useQueryClient();
+    const {
+        mutateAsync,
+        isPending: isEditingExams,
+        error: editExamError,
+    } = useEditAdmissionExamById();
 
-  const [selectedMajorId, setSelectedMajorId] = useState<number | null>(null);
-  const [examDatesFormState, setExamDatesFormState] = useState<ExamDateFormState[]>([]);
-  const [numSubjectColumns, setNumSubjectColumns] = useState<number>(3);
-  const [selectedSubjectIdsPerColumn, setSelectedSubjectIdsPerColumn] = useState<number[]>(Array(3).fill(0));
+    const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (existingExam && majorData && subjectsData && regionsData) {
-      setSelectedMajorId(existingExam.admission_major);
+    const [selectedMajorId, setSelectedMajorId] = useState<number | null>(null);
+    const [examDatesFormState, setExamDatesFormState] = useState<ExamDateFormState[]>([]);
+    const [numSubjectColumns, setNumSubjectColumns] = useState<number>(1);
+    const [selectedSubjectIdsPerColumn, setSelectedSubjectIdsPerColumn] = useState<number[]>([]);
 
-      const examDatesBySubject: Record<number, ExamDate[]> = {};
-      existingExam.exam_dates.forEach(ed => {
-        if (!examDatesBySubject[ed.date_of_exam]) {
-          examDatesBySubject[ed.date_of_exam
+    const regions: { name: string; value: Region }[] = [
+        { name: 'Ashgabat', value: 'ashgabat' },
+        { name: 'Ahal', value: 'ahal' },
+        { name: 'Balkan', value: 'balkan' },
+        { name: 'Dashoguz', value: 'dashoguz' },
+        { name: 'Lebap', value: 'lebap' },
+        { name: 'Mary', value: 'mary' },
+    ];
 
-          ] = [];
-        }
-        examDatesBySubject[ed.id].push(ed);
-      });
+    useEffect(() => {
+        if (major_id && examData?.exams) {
+            const uniqueSubjects = Array.from(new Set(examData.exams.map(exam => exam.subject[0].id)));
+            setNumSubjectColumns(uniqueSubjects.length);
+            setSelectedSubjectIdsPerColumn(uniqueSubjects);
 
-      const uniqueSubjects = Object.keys(examDatesBySubject).map(Number);
-      setNumSubjectColumns(uniqueSubjects.length);
-      setSelectedSubjectIdsPerColumn(uniqueSubjects);
+            const initialExamDatesFormState = regions.map(region => ({
+                region: region.value as Region,
+                dates: Array(uniqueSubjects.length).fill(null) as (Dayjs | null)[],
+            }));
 
-      const newFormState = regionsData.results.map(region => {
-        const dates = uniqueSubjects.map(subjectId => {
-          const examDateForRegion = examDatesBySubject[subjectId]?.find(ed => ed.region === region.id);
-          return examDateForRegion ? dayjs(examDateForRegion.date_of_exam, 'DD.MM.YYYY') : null;
-        });
-
-        return {
-          regionId: region.id,
-          dates: dates
-        };
-      });
-
-      setExamDatesFormState(newFormState);
-    }
-  }, [existingExam, majorData, subjectsData, regionsData]);
-
-  useEffect(() => {
-    if (regionsData?.results && !isLoadingExisting && !existingExam) {
-      setExamDatesFormState(regionsData.results.map(region => ({
-        regionId: region.id,
-        dates: Array<Dayjs | null>(numSubjectColumns).fill(null)
-      })));
-    }
-  }, [regionsData, numSubjectColumns, isLoadingExisting, existingExam]);
-
-  useEffect(() => {
-    if (errorMajor) toast.error(`Error loading majors: ${errorMajor.message}`);
-    if (errorSubjects) toast.error(`Error loading subjects: ${errorSubjects.message}`);
-    if (errorRegions) toast.error(`Error loading regions: ${errorRegions.message}`);
-    if (errorExisting) toast.error(`Error loading exam data: ${errorExisting.message}`);
-  }, [errorMajor, errorSubjects, errorRegions, errorExisting]);
-
-  const handleMajorChange = (value: number | string) => {
-    setSelectedMajorId(Number(value));
-  };
-
-  const handleDateChange = (regionId: number, subjectColumnIndex: number, date: Dayjs | null) => {
-    setExamDatesFormState(prevExamDates =>
-      prevExamDates.map(item => {
-        if (item.regionId === regionId) {
-          const newDates = [...item.dates];
-          newDates[subjectColumnIndex] = date;
-          return { ...item, dates: newDates };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleSubjectSelectChange = (subjectColumnIndex: number, subjectId: number | string) => {
-    setSelectedSubjectIdsPerColumn(prev => {
-      const newSelectedSubjects = [...prev];
-      newSelectedSubjects[subjectColumnIndex] = Number(subjectId);
-      return newSelectedSubjects;
-    });
-  };
-
-  const handleAddSubjectColumn = () => {
-    setNumSubjectColumns(prev => prev + 1);
-    setSelectedSubjectIdsPerColumn(prev => [...prev, 0]);
-    setExamDatesFormState(prev =>
-      prev.map(item => ({
-        ...item,
-        dates: [...item.dates, null]
-      }))
-    );
-  };
-
-  const handleRemoveSubjectColumn = (index: number) => {
-    if (numSubjectColumns <= 1) {
-      toast.error('At least one subject is required');
-      return;
-    }
-
-    setNumSubjectColumns(prev => prev - 1);
-    setSelectedSubjectIdsPerColumn(prev => prev.filter((_, i) => i !== index));
-    setExamDatesFormState(prev =>
-      prev.map(item => ({
-        ...item,
-        dates: item.dates.filter((_, i) => i !== index)
-      }))
-    );
-  };
-
-  const handleSave = async () => {
-    if (selectedMajorId === null || selectedMajorId === 0) {
-      toast.error('Please select a major.');
-      return;
-    }
-
-    if (!regionsData?.results || regionsData.results.length === 0) {
-      toast.error('Region data not available.');
-      return;
-    }
-
-    if (!subjectsData?.results || subjectsData.results.length === 0) {
-      toast.error('Subject data not available.');
-      return;
-    }
-
-    const payloadsToSend: {
-      admission_major: number;
-      subject: number;
-      exam_dates: ExamDate[];
-    }[] = [];
-    let hasAnyValidData = false;
-
-    for (let i = 0; i < numSubjectColumns; i++) {
-      const subjectIdForColumn = selectedSubjectIdsPerColumn[i];
-
-      if (!subjectIdForColumn || subjectIdForColumn === 0) {
-        continue;
-      }
-
-      const examDatesForThisSubject: ExamDate[] = [];
-      let hasDatesForThisSubject = false;
-
-      examDatesFormState.forEach(regionFormState => {
-        const dateForThisSubjectColumn = regionFormState.dates[i];
-        if (dateForThisSubjectColumn) {
-          const formattedDate = formatDate(dateForThisSubjectColumn);
-          if (formattedDate) {
-            examDatesForThisSubject.push({
-              region: regionFormState.regionId,
-              date_of_exam: formattedDate,
+            examData.exams.forEach((exam, subjectIndex) => {
+                exam.exam_dates.forEach(examDate => {
+                    const regionIndex = initialExamDatesFormState.findIndex(r => r.region === examDate.region);
+                    if (regionIndex !== -1) {
+                        initialExamDatesFormState[regionIndex].dates[subjectIndex] = dayjs(examDate.date_of_exam, 'DD.MM.YYYY');
+                    }
+                });
             });
-            hasDatesForThisSubject = true;
-          }
+            setExamDatesFormState(initialExamDatesFormState);
+
+            setSelectedMajorId(Number(major_id));
         }
-      });
+    }, [major_id, examData, regions]);
 
-      if (hasDatesForThisSubject) {
-        payloadsToSend.push({
-          admission_major: selectedMajorId,
-          subject: subjectIdForColumn,
-          exam_dates: examDatesForThisSubject,
+    useEffect(() => {
+        const newExamDatesFormState = regions.map((region) => ({
+            region: region.value as Region,
+            dates: Array(numSubjectColumns).fill(null),
+        }));
+        setExamDatesFormState(newExamDatesFormState);
+
+        setSelectedSubjectIdsPerColumn((prev) => {
+            const newSelectedSubjects = [...prev];
+            if (newSelectedSubjects.length < numSubjectColumns) {
+                for (let i = newSelectedSubjects.length; i < numSubjectColumns; i++) {
+                    newSelectedSubjects.push(0);
+                }
+            } else if (newSelectedSubjects.length > numSubjectColumns) {
+                newSelectedSubjects.splice(numSubjectColumns);
+            }
+            return newSelectedSubjects;
         });
-        hasAnyValidData = true;
-      }
-    }
 
-    if (!hasAnyValidData) {
-      toast.error('Please select a major, at least one subject, and dates for that subject in each selected region.');
-      return;
-    }
+    }, [numSubjectColumns]);
 
-    try {
-      // In edit mode, we'll update each subject's exam dates one by one
-      // Note: This might need adjustment based on your API's expectations
-      for (const payload of payloadsToSend) {
-        await mutateAsync({
-          id: exam_id, // exam_id'yi doğru kullanın
-          data: payload,
+    useEffect(() => {
+        if (errorMajor) toast.error(`Error loading majors: ${errorMajor.message}`);
+        if (errorSubjects) toast.error(`Error loading subjects: ${errorSubjects.message}`);
+    }, [errorMajor, errorSubjects]);
+
+    useEffect(() => {
+        if (editExamError) {
+            console.error('Mutation Error:', editExamError);
+            toast.error(
+                `Error editing exam: ${
+                    (editExamError as any)?.response?.data?.detail ||
+                    (editExamError as any)?.message ||
+                    'An unexpected error occurred.'
+                }`
+            );
+        }
+    }, [editExamError]);
+
+    const handleSave = async () => {
+        if (!admission_id) {
+            toast.error("Admission ID is missing.");
+            return;
+        }
+        if (!major_id) {
+            toast.error("Major ID is missing.");
+            return;
+        }
+        if (selectedMajorId === null || selectedMajorId === 0) {
+            toast.error('Please select a major.');
+            return;
+        }
+
+        if (regions.length === 0) {
+            toast.error('Region data not available.');
+            return;
+        }
+
+        if (!subjectsData?.results || subjectsData.results.length === 0) {
+            toast.error('Subject data not available.');
+            return;
+        }
+
+        const payloadsToSend: AdmissionData[] = [];
+
+        for (let i = 0; i < numSubjectColumns; i++) {
+            const subjectId = selectedSubjectIdsPerColumn[i];
+
+            if (!subjectId || subjectId === 0) {
+                continue; // Skip if no subject is selected
+            }
+
+            const examDates: ExamDate[] = [];
+
+            examDatesFormState.forEach((regionFormState) => {
+                const date = regionFormState.dates[i];
+                const formattedDate = formatDate(date);
+
+                if (formattedDate) {
+                    examDates.push({
+                        region: regionFormState.region,
+                        date_of_exam: formattedDate,
+                    });
+                }
+            });
+
+            if (examDates.length > 0) {
+                payloadsToSend.push({
+                    admission_major: selectedMajorId,
+                    subject: [subjectId], // Wrap subjectId in an array
+                    exam_dates: examDates,
+                });
+            }
+        }
+
+        if (payloadsToSend.length === 0) {
+            toast.error(
+                'Please select at least one subject and dates for that subject in each selected region.'
+            );
+            return;
+        }
+
+        try {
+            if (major_id) {
+                await mutateAsync({ id: major_id, data: payloadsToSend[0] }); // Pass major_id as id
+                toast.success('Exam details updated successfully!');
+                queryClient.invalidateQueries({ queryKey: ['admission_exams'] });
+                navigate(`/admissions/${admission_id}/exams`);
+            } else {
+                toast.error("Major ID is missing.");
+            }
+        } catch (error: any) {
+            console.error('Error editing exam details:', error);
+            toast.error(
+                `Error editing exam details: ${
+                    error?.response?.data?.detail ||
+                    error?.message ||
+                    'An unexpected error occurred.'
+                }`
+            );
+        }
+    };
+
+    const handleMajorChange = (value: number | string) => {
+        setSelectedMajorId(Number(value));
+    };
+
+    const handleDateChange = (region: Region, subjectColumnIndex: number, date: Dayjs | null) => {
+        setExamDatesFormState((prevExamDates) => {
+            return prevExamDates.map((item) => {
+                if (item.region === region) {
+                    const newDates = [...item.dates];
+                    newDates[subjectColumnIndex] = date;
+                    return { ...item, dates: newDates };
+                }
+                return item;
+            });
         });
-      }
+    };
 
-      toast.success('Admission exam updated successfully!');
-      queryClient.invalidateQueries({ queryKey: ['admission_exams'] });
-      navigate(-1); // Go back to previous page
-    } catch (error: any) {
+    const handleSubjectSelectChange = (subjectColumnIndex: number, subjectId: number | string) => {
+        setSelectedSubjectIdsPerColumn((prev) => {
+            const newSelectedSubjects = [...prev];
+            newSelectedSubjects[subjectColumnIndex] = Number(subjectId);
+            return newSelectedSubjects;
+        });
+    };
 
-      const errorMessage = error?.response?.data?.message || error.message || 'Failed to update exam';
-      toast.error(`Error updating exam: ${errorMessage}`);
+    const subjectOptions =
+        subjectsData?.results?.map((subject) => ({
+            value: subject.id,
+            label: subject.name,
+        })) || [];
+
+    subjectOptions.unshift({ value: 0, label: 'Select Subject' });
+
+    if (isExamDataLoading) {
+        return <div>Loading exam data...</div>;
     }
-  };
 
-  const subjectOptions = subjectsData?.results?.map(subject => ({
-    value: subject.id,
-    label: subject.name,
-  })) || [];
+    if (examDataError) {
+        return <div>Error loading exam data: {examDataError.message}</div>;
+    }
 
-  subjectOptions.unshift({ value: 0, label: 'Select Subject' });
+    return (
+        <div>
+            <Container>
+                <div className="px-5 py-10">
+                    <h1 className="text-lg mb-5">Edit Admission Exam</h1>
 
-  const canRenderTable = majorData?.results && majorData.results.length > 0 &&
-    subjectsData?.results && subjectsData.results.length > 1 &&
-    regionsData?.results && regionsData.results.length > 0 &&
-    !isLoadingExisting;
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium mb-1 text-formInputText">
+                            Major
+                        </label>
+                        <Select
+                            value={selectedMajorId === null ? 0 : selectedMajorId}
+                            onChange={handleMajorChange}
+                            className="w-96 h-auto rounded focus:outline-none text-gray-600 bg-white"
+                        >
+                            {majorData?.results.map((m) => (
+                                <Select.Option key={m.id} value={m.id}>
+                                    {m.major}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </div>
 
-  return (
-    <div>
-      <Container>
-        <div className="px-5 py-10">
-          <h1 className="text-lg mb-5">Edit Admission Exam</h1>
+                    <TableLayout className="overflow-x-auto border-none">
+                        <table className="min-w-[850px] table-auto border-collapse border">
+                            <thead>
+                                <tr className="bg-tableTop text-tableTopText">
+                                    <th className="border px-4 py-2">Region</th>
+                                    {Array.from({ length: numSubjectColumns }).map((_, index) => {
+                                        const subject = examData?.exams.find(exam => exam.subject[0].id === selectedSubjectIdsPerColumn[index])?.subject[0];
+                                        const subjectName = subject ? subject.name : 'Select Subject';
+                                        return (
+                                            <th
+                                                key={`subject-header-${index}`}
+                                                className="border px-3 py-2 text-center"
+                                                style={{ textAlign: 'center', minWidth: '150px' }}
+                                            >
+                                                <Select
+                                                    className="w-full rounded focus:outline-none text-gray-600 border-none bg-transparent custom-select"
+                                                    onChange={(value) => handleSubjectSelectChange(index, value)}
+                                                    value={selectedSubjectIdsPerColumn[index]}
+                                                    style={{ width: '100%', textAlign: 'center' }}
+                                                    options={subjectOptions}
+                                                />
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {regions.map((regionData, rowIndex) => {
+                                    const regionFormState = examDatesFormState.find(item => item.region === regionData.value);
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-1 text-formInputText">Major</label>
-      
-              <Select
-                value={selectedMajorId === null ? 0 : selectedMajorId}
-                onChange={handleMajorChange}
-                className="w-96 h-auto rounded focus:outline-none text-gray-600 bg-white"
-              >
-                <Select.Option value={0}>Select a major</Select.Option>
-                {majorData?.results.map(m => (
-                  <Select.Option key={m.id} value={m.id}>{m.major}</Select.Option>
-                ))}
-              </Select>
-          
-          </div>
+                                    return (
+                                        <tr
+                                            key={regionData.value}
+                                            className={rowIndex % 2 === 0 ? 'bg-gray-50' : ''}
+                                        >
+                                            <td className="border text-center px-4 py-2">
+                                                {regionData.name}
+                                            </td>
+                                            {Array.from({ length: numSubjectColumns }).map((subject, subjectColumnIndex) => (
+                                                <td
+                                                    key={`${regionData.value}-${subjectColumnIndex}`}
+                                                    className="border px-4 py-2"
+                                                    style={{ textAlign: 'center' }}
+                                                >
+                                                    <DatePicker
+                                                        onChange={(date) => handleDateChange(regionData.value, subjectColumnIndex, date)}
+                                                        value={regionFormState?.dates[subjectColumnIndex] || null}
+                                                        format="DD.MM.YYYY"
+                                                        style={{
+                                                            width: '100%',
+                                                            border: 'none',
+                                                            padding: '0',
+                                                        }}
+                                                        className="custom-datepicker"
+                                                        placeholder="Select Date"
+                                                    />
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </TableLayout>
 
-          
-            <>
-              <TableLayout className="overflow-x-auto border-none">
-                <table className="min-w-[850px] table-auto border-collapse border">
-                  <thead>
-                    <tr className="bg-tableTop text-tableTopText">
-                      <th className="border px-4 py-2">Region</th>
-                      {Array.from({ length: numSubjectColumns }).map((_, index) => (
-                        <th key={`subject-header-${index}`} className="border px-3 py-2 text-center" style={{ minWidth: '150px' }}>
-                          <div className="flex items-center justify-between">
-                            <Select
-                              className="flex-1 rounded focus:outline-none text-gray-600 border-none bg-transparent custom-select"
-                              onChange={(value) => handleSubjectSelectChange(index, value)}
-                              value={selectedSubjectIdsPerColumn[index] || 0}
-                              options={subjectOptions}
-                            />
-                           
-                          </div>
-                        </th>
-                      ))}
-
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {regionsData?.results.map((region) => {
-                      const regionFormState = examDatesFormState.find(item => item.regionId === region.id);
-
-                      return (
-                        <tr key={region.id} >
-                          <td className="border text-center px-4 py-2">{region.name}</td>
-                          {Array.from({ length: numSubjectColumns }).map((_, subjectColumnIndex) => (
-                            <td key={`${region.id}-${subjectColumnIndex}`} className="border px-4 py-2" style={{ textAlign: 'center' }}>
-                              <DatePicker
-                                onChange={(date) => handleDateChange(region.id, subjectColumnIndex, date)}
-                                value={regionFormState?.dates[subjectColumnIndex] || null}
-                                format="DD.MM.YYYY"
-                                style={{
-                                  width: '100%',
-                                  border: 'none',
-                                  padding: '0',
-                                }}
-                                className="custom-datepicker"
-                                placeholder="Select Date"
-                              />
-                            </td>
-                          ))}
-
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </TableLayout>
-
-              <div className="mt-6 flex justify-end gap-4">
-                <LinkButton to={`/admissions/${selectedMajorId}/exams`} type="button" variant="cancel">
-                  Cancel
-                </LinkButton>
-                <button
-                  onClick={handleSave}
-                  disabled={isUpdating || isLoadingMajor || isLoadingSubjects || isLoadingRegions || !canRenderTable || selectedMajorId === null || selectedMajorId === 0}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUpdating ? 'Updating...' : 'Update'}
-                </button>
-              </div>
-            </>
-        
+                    <div className="mt-6 flex justify-end gap-4">
+                        <LinkButton
+                            to={`/admissions/${admission_id}/exams`}
+                            type="button"
+                            variant="cancel"
+                        >
+                            Cancel
+                        </LinkButton>
+                        <button
+                            onClick={handleSave}
+                            disabled={
+                                isEditingExams ||
+                                isLoadingMajor ||
+                                isLoadingSubjects ||
+                                selectedMajorId === null ||
+                                selectedMajorId === 0
+                            }
+                            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isEditingExams ? 'Editing...' : 'Save'}
+                        </button>
+                    </div>
+                </div>
+            </Container>
         </div>
-      </Container>
-    </div>
-  );
+    );
 };
 
 export default EditAdmissionExamPage;
