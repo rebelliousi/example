@@ -1,0 +1,15 @@
+.custom-select {
+  height: 3rem !important; /* İstediğiniz yüksekliği ayarlayın */
+  line-height: 2.5rem !important; /* Yazı yüksekliğini ortalamak için */
+  padding-top: 0.25rem !important; /* Gerekirse padding'i ayarlayın */
+  padding-bottom: 0.25rem !important;
+}
+
+.custom-select .ant-select-selector {
+  height: 3rem !important;
+}
+
+.custom-select .ant-select-selection-item,
+.custom-select .ant-select-selection-placeholder {
+  line-height: 2.5rem !important;
+}

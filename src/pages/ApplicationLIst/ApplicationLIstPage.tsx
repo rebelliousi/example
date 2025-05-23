@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 import TableLayout from '../../components/Table/TableLayout';
