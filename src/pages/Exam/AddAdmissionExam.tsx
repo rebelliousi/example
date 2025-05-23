@@ -347,7 +347,7 @@ const AddAdmissionExamPage = () => {
               }
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isAddingExams ? 'Adding...' : 'Save'}
+              {isAddingExams ? 'Adding...' : 'Add'}
             </button>
           </div>
         </div>

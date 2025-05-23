@@ -21,7 +21,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
       try {
-        await mutate(application.admission); //id need here
+        await mutate(application.id); //id need here
         setStatus('waiting');
         setOpen(false);
       } catch (err) {
@@ -43,7 +43,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       </div>
 
       <div className="col-span-3">
-        <h1 className="line-clamp-2">{application.admission_major?.[0]?.major|| '-'}</h1>
+        <h1 className="line-clamp-2">{application.primary_major.major || '-'}</h1>
       </div>
 
       <div className="col-span-1">

@@ -1,595 +1,1075 @@
-// src/pages/AddApplicationPage/AddApplicationPage.tsx
 import React, { useState } from 'react';
-import Container from '../../components/Container/Container';
-import Select from '../../components/InputSelect/Select';
-import { LinkButton } from '../../components/Buttons/LinkButton';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { IArea, IRegions } from '../../models/models';
 import { useArea } from '../../hooks/Area/useAreas';
-import { IActiveMajors, useActiveMajors } from '../../hooks/ActiveMajors/useActiveMajors';
-import { useRegions } from '../../hooks/Regions/useRegions';
-import { useAddApplication } from '../../hooks/ApplicationList/useAddApplicationList';
+import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
+import {
+  Document,
+  IApplication,
+  Institution,
+  Olympic,
+  useAddApplication,
+} from '../../hooks/ApplicationList/useAddApplicationList';
+import { Container } from '@mui/material';
+import TableLayout from '../../components/Table/TableLayout';
+import { useSendFiles } from '../../hooks/ApplicationList/useSendFiles';
 
-interface AddApplicationPageProps {}
-
-export interface Guardian {
-  id: number;
-  application: number;
-  relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
-  first_name: string;
-  last_name: string;
-  father_name: string;
-  date_of_birth: string;
-  place_of_birth: string;
-  phone: string;
-  address: string;
-  work_place: string;
-  area: number;
-  passport: string | null; // Filename or null
+interface InstitutionWithFileId extends Institution {
+  certificateFileId?: number;
 }
 
-export interface IApplication {
-  degree: 'BACHELOR' | 'MASTER';
-  primary_major: number;
-  admission_major: number[];
-  first_name: string;
-  last_name: string;
-  father_name: string;
-  gender: 'MALE' | 'FEMALE';
-  nationality: string;
-  date_of_birth: string;
-  area: number;
-  address: string;
-  place_of_birth: string;
-  home_phone: string;
-  cell_phone: string;
-  email: string;
-  serial_number: string;
-  document_number: string;
-  given_date: string;
-  given_by: string;
-  passport: string; // Filename
-  school_name: string;
-  school_graduated_year: number;
-  school_gpa: number;
-  region_of_school: number;
-  district_of_school: string;
-  certificate_of_school: string; // Filename
-  award: 'area' | 'region' | 'state' | 'international' | 'other';
-  award_description: string;
-  award_certificate: string; // Filename
-  military_service: 'female' | 'served' | 'not_served';
-  military_service_note: string;
-  assign_job_by_sign: boolean;
-  orphan: boolean;
-  number: number;
-  guardians: Guardian[];
-  rejection_reason: string;
-  date_approved: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  other_education_type?: string;
-  other_education_country?: string;
-  graduated_university?: string;
-  other_graduated_year?: string;
-  other_certificate_file?: string;
-  military_service_document?: string;
-  health_document_file?: string;
-  family_document_file?: string;
-  information_file?: string;
-  another_info_file?: string;
-  image_3x4_file?: string;
-  father_passport_file?: string;
-  mother_passport_file?: string;
+interface OlympicWithFileId extends Olympic {
+  olympicFileId?: number;
 }
 
-const getErrorMessages = (errorData: any): string => {
-  if (!errorData) return "An unknown error occurred.";
-  if (typeof errorData === 'string') {
-    return errorData;
-  }
-  if (Array.isArray(errorData)) {
-    return errorData.map(getErrorMessages).join('; ');
-  }
-  if (typeof errorData === 'object' && errorData !== null) {
-    return Object.values(errorData).map(getErrorMessages).join('; ');
-  }
-  return 'Error details are not in a recognizable format.';
-};
+interface DocumentWithFileId extends Document {
+  documentFileId?: number;
+}
 
-export const AddApplicationPage: React.FC<AddApplicationPageProps> = () => {
-  const [applicationData, setApplicationData] = useState<IApplication>({
-    degree: 'BACHELOR',
+interface IApplicationWithFileIds extends IApplication {
+  institutions: InstitutionWithFileId[];
+  olympics: OlympicWithFileId[];
+  documents: DocumentWithFileId[];
+}
+
+const ApplicationForm: React.FC = () => {
+  const [application, setApplication] = useState<IApplicationWithFileIds>({
     primary_major: 0,
     admission_major: [],
-    first_name: '',
-    last_name: '',
-    father_name: '',
-    gender: 'MALE',
-    nationality: '',
-    date_of_birth: '',
-    area: 0,
-    address: '',
-    place_of_birth: '',
-    home_phone: '',
-    cell_phone: '',
-    email: '',
-    serial_number: '',
-    document_number: '',
-    given_date: '',
-    given_by: '',
-    passport: '',
-    school_name: '',
-    school_graduated_year: 0,
-    school_gpa: 0,
-    region_of_school: 0,
-    district_of_school: '',
-    certificate_of_school: '',
-    award: 'area',
-    award_description: '',
-    award_certificate: '',
-    military_service: 'female',
-    military_service_note: '',
-    assign_job_by_sign: false,
-    orphan: false,
-    number: 0,
-    guardians: [],
-    rejection_reason: '',
-    date_approved: '',
-    status: 'PENDING',
+    user: {
+      first_name: '',
+      last_name: '',
+      father_name: '',
+      area: 0,
+      gender: 'male',
+      nationality: '',
+      date_of_birth: '',
+      address: '',
+      place_of_birth: '',
+      home_phone: '',
+      phone: '',
+      email: '',
+    },
+    guardians: [
+      {
+        relation: 'father',
+        first_name: '',
+        last_name: '',
+        father_name: '',
+        date_of_birth: '',
+        place_of_birth: '',
+        phone: '',
+        address: '',
+        work_place: '',
+      },
+    ],
+    institutions: [
+      {
+        name: '',
+        school_gpa: 0,
+        graduated_year: 0,
+      },
+    ],
+    olympics: [
+      {
+        type: 'area',
+        description: '',
+      },
+    ],
+    documents: [
+      {
+        type: 'school_certificate',
+      },
+    ],
   });
 
-  const [applicantPassportFile, setApplicantPassportFile] = useState<File | null>(null);
-  const [schoolCertificateFile, setSchoolCertificateFile] = useState<File | null>(null);
-  const [awardCertificateFile, setAwardCertificateFile] = useState<File | null>(null);
+  const {
+    data: areas,
+    isLoading: isAreasLoading,
+    isError: isAreasError,
+  } = useArea();
+  const {
+    data: majors,
+    isLoading: isMajorsLoading,
+    isError: isMajorsError,
+  } = useAdmissionMajor(1);
+  const mutation = useAddApplication();
 
-  const [fatherFirstName, setFatherFirstName] = useState('');
-  const [fatherLastName, setFatherLastName] = useState('');
-  const [fatherFathersName, setFatherFathersName] = useState('');
-  const [fatherDateOfBirth, setFatherDateOfBirth] = useState('');
-  const [fatherArea, setFatherArea] = useState(0);
-  const [fatherPlaceOfBirth, setFatherPlaceOfBirth] = useState('');
-  const [fatherAddress, setFatherAddress] = useState('');
-  const [fatherPhoneNumber, setFatherPhoneNumber] = useState('');
-  const [fatherWorkPlace, setFatherWorkPlace] = useState('');
-  const [fatherPassportFile, setFatherPassportFile] = useState<File | null>(null);
+  const {
+    mutate: uploadFile,
+    isPending: isFileUploadLoading,
+    isError: fileUploadError,
+  } = useSendFiles();
 
-  const [motherFirstName, setMotherFirstName] = useState('');
-  const [motherLastName, setMotherLastName] = useState('');
-  const [motherFathersName, setMotherFathersName] = useState('');
-  const [motherDateOfBirth, setMotherDateOfBirth] = useState('');
-  const [motherArea, setMotherArea] = useState(0);
-  const [motherPlaceOfBirth, setMotherPlaceOfBirth] = useState('');
-  const [motherAddress, setMotherAddress] = useState('');
-  const [motherPhoneNumber, setMotherPhoneNumber] = useState('');
-  const [motherWorkPlace, setMotherWorkPlace] = useState('');
-  const [motherPassportFile, setMotherPassportFile] = useState<File | null>(null);
+  const formatDateForApi = (dateString: string): string => {
+    if (!dateString) return '';
 
-  const [otherEducationType, setOtherEducationType] = useState('');
-  const [otherEducationCountry, setOtherEducationCountry] = useState('');
-  const [graduatedUniversity, setGraduatedUniversity] = useState('');
-  const [otherGraduatedYear, setOtherGraduatedYear] = useState<number | string>('');
-  const [otherCertificateFile, setOtherCertificateFile] = useState<File | null>(null);
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
 
-  const [militaryServiceFile, setMilitaryServiceFile] = useState<File | null>(null);
-  const [healthDocumentFile, setHealthDocumentFile] = useState<File | null>(null);
-  const [familyDocumentFile, setFamilyDocumentFile] = useState<File | null>(null);
-  const [informationFile, setInformationFile] = useState<File | null>(null);
-  const [anotherInfoFile, setAnotherInfoFile] = useState<File | null>(null);
-  const [image3x4File, setImage3x4File] = useState<File | null>(null);
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return '';
 
-  const { data: areaData, isLoading: isAreaLoading, error: areaError } = useArea();
-  const { data: regionsData, isLoading: isRegionsLoading, error: regionsError } = useRegions();
-  const { data: activeMajorsData, isLoading: isActiveMajorsLoading, error: activeMajorsError } = useActiveMajors(1);
+    const [day, month, year] = dateString.split('.');
+    return `${year}-${month}-${day}`;
+  };
 
-  const { mutateAsync: addApplicationToList, isPending } = useAddApplication();
-  const navigate = useNavigate();
+  const handleUserChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, type, value } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
+    let updatedValue = value;
+    if (name === 'date_of_birth') {
+      updatedValue = formatDateForApi(value);
+    }
 
-    setApplicationData((prevData) => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
+    setApplication((prev) => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        [name]: updatedValue,
+      },
     }));
   };
 
-  const handleApplicantFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fileSetter: (file: File | null) => void,
-    fieldName: keyof IApplication // to update the filename in applicationData
+  const handleGuardianChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const file = e.target.files && e.target.files[0];
-    fileSetter(file || null);
-    if (file) {
-      setApplicationData(prev => ({ ...prev, [fieldName]: file.name }));
-    } else {
-      setApplicationData(prev => ({ ...prev, [fieldName]: '' })); // Clear the filename if no file selected
+    const { name, value } = e.target;
+
+    let updatedValue = value;
+    if (name === 'date_of_birth') {
+      updatedValue = formatDateForApi(value);
+    }
+
+    setApplication((prev) => {
+      const newGuardians = [...prev.guardians];
+      newGuardians[index] = {
+        ...newGuardians[index],
+        [name]: updatedValue,
+      };
+      return {
+        ...prev,
+        guardians: newGuardians,
+      };
+    });
+  };
+
+  const handleInstitutionChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setApplication((prev) => {
+      const newInstitutions = [...prev.institutions];
+      newInstitutions[index] = {
+        ...newInstitutions[index],
+        [name]:
+          name === 'school_gpa' || name === 'graduated_year'
+            ? Number(value)
+            : value,
+      };
+      return {
+        ...prev,
+        institutions: newInstitutions,
+      };
+    });
+  };
+
+  const handleInstitutionFileUpload = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      const formData = new FormData();
+      formData.append('path', file);
+
+      uploadFile(formData, {
+        onSuccess: (data) => {
+          setApplication((prev) => {
+            const newInstitutions = [...prev.institutions];
+            newInstitutions[index] = {
+              ...newInstitutions[index],
+              certificateFileId: data.id,
+            };
+            return {
+              ...prev,
+              institutions: newInstitutions,
+            };
+          });
+        },
+        onError: (error: any) => {
+          console.error('File upload failed', error);
+        },
+      });
     }
   };
 
-  const handleGenericFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setter: (file: File | null) => void,
-    fieldName?: keyof IApplication // optional to update applicationData
+  const handleOlympicChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const file = e.target.files && e.target.files[0];
-    setter(file || null);
-    if (fieldName && file) {
-       setApplicationData(prev => ({ ...prev, [fieldName]: file.name }));
-    } else if (fieldName) {
-      setApplicationData(prev => ({ ...prev, [fieldName]: '' })); // Clear the filename
+    const { name, value } = e.target;
+    setApplication((prev) => {
+      const newOlympics = [...prev.olympics];
+      newOlympics[index] = {
+        ...newOlympics[index],
+        [name]: value,
+      };
+      return {
+        ...prev,
+        olympics: newOlympics,
+      };
+    });
+  };
+
+  const handleOlympicFileUpload = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // FormData oluştur
+      const formData = new FormData();
+      formData.append('path', file);
+
+      uploadFile(formData, {
+        onSuccess: (data) => {
+          setApplication((prev) => {
+            const newOlympics = [...prev.olympics];
+            newOlympics[index] = {
+              ...newOlympics[index],
+              olympicFileId: data.id,
+            };
+            return {
+              ...prev,
+              olympics: newOlympics,
+            };
+          });
+        },
+        onError: (error: any) => {
+          console.error('File upload failed', error);
+        },
+      });
     }
   };
 
+  const handleDocumentChange = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setApplication((prev) => {
+      const newDocuments = [...prev.documents];
+      newDocuments[index] = {
+        ...newDocuments[index],
+        [name]: value,
+      };
+      return {
+        ...prev,
+        documents: newDocuments,
+      };
+    });
+  };
+
+  const handleDocumentFileUpload = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // FormData oluştur
+      const formData = new FormData();
+      formData.append('path', file);
+
+      uploadFile(formData, {
+        onSuccess: (data) => {
+          setApplication((prev) => {
+            const newDocuments = [...prev.documents];
+            newDocuments[index] = {
+              ...newDocuments[index],
+              documentFileId: data.id,
+            };
+            return {
+              ...prev,
+              documents: newDocuments,
+            };
+          });
+        },
+        onError: (error: any) => {
+          console.error('File upload failed', error);
+        },
+      });
+    }
+  };
+
+  const addGuardian = () => {
+    setApplication((prev) => ({
+      ...prev,
+      guardians: [
+        ...prev.guardians,
+        {
+          relation: 'father',
+          first_name: '',
+          last_name: '',
+          father_name: '',
+          date_of_birth: '',
+          place_of_birth: '',
+          phone: '',
+          address: '',
+          work_place: '',
+        },
+      ],
+    }));
+  };
+
+  const addInstitution = () => {
+    setApplication((prev) => ({
+      ...prev,
+      institutions: [
+        ...prev.institutions,
+        {
+          name: '',
+          school_gpa: 0,
+          graduated_year: 0,
+        },
+      ],
+    }));
+  };
+
+  const addOlympic = () => {
+    setApplication((prev) => ({
+      ...prev,
+      olympics: [
+        ...prev.olympics,
+        {
+          type: 'area',
+          description: '',
+        },
+      ],
+    }));
+  };
+
+  const addDocument = () => {
+    setApplication((prev) => ({
+      ...prev,
+      documents: [
+        ...prev.documents,
+        {
+          type: 'school_certificate',
+        },
+      ],
+    }));
+  };
+
+  const removeItem = (
+    type: 'guardians' | 'institutions' | 'olympics' | 'documents',
+    index: number
+  ) => {
+    setApplication((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!applicationData.first_name || !applicationData.last_name || !applicationData.email) {
-      toast.error('Please fill in First Name, Last Name, and Email.');
-      return;
-    }
-    if (applicationData.primary_major === 0) {
-      toast.error('Please select a Primary Major.');
-      return;
-    }
-    if (applicationData.area === 0) {
-      toast.error('Please select an Area for the applicant.');
-      return;
-    }
-
-    const formData = new FormData();
-
-    // Format date_approved
-    let formattedDateApproved = '';
-    if (applicationData.date_approved) {
-      try {
-        const date = new Date(applicationData.date_approved);
-        if (!isNaN(date.getTime())) {
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          formattedDateApproved = `${day}.${month}.${year} ${hours}:${minutes}`;
-        }
-      } catch (error) {
-        console.error("Error formatting date_approved:", error);
-      }
-    }
-
-    // Append applicationData fields to FormData
-    (Object.keys(applicationData) as Array<keyof IApplication>).forEach(key => {
-      // Skip files, guardians, and admission_major, and date_approved which are handled separately
-      if (key === 'guardians' || key === 'admission_major' ||
-          key === 'passport' || key === 'certificate_of_school' || key === 'award_certificate' ||
-          key === 'date_approved') {
-        return;
-      }
-
-      const value = applicationData[key];
-      if (value !== null && value !== undefined && value !== '') {
-        if (typeof value === 'boolean') {
-          formData.append(key, value ? 'true' : 'false');
-        } else if (key === 'school_gpa') {
-          formData.append(key, String(Number(value).toFixed(2)));
-        } else {
-          formData.append(key, String(value));
-        }
-      }
-    });
-
-    // Append formatted date_approved if it exists
-    if (formattedDateApproved) {
-      formData.append('date_approved', formattedDateApproved);
-    }
-
-    // Append files to FormData
-    if (applicantPassportFile) formData.append('passport', applicantPassportFile);
-    if (schoolCertificateFile) formData.append('certificate_of_school', schoolCertificateFile);
-    if (awardCertificateFile) formData.append('award_certificate', awardCertificateFile);
-
-    // Guardians
-    const guardians: Guardian[] = [];
-    if (fatherFirstName || fatherLastName) {
-        guardians.push({
-            id: 0,
-            application: 0,
-            relation: 'father',
-            first_name: fatherFirstName,
-            last_name: fatherLastName,
-            father_name: fatherFathersName,
-            date_of_birth: fatherDateOfBirth,
-            area: fatherArea,
-            address: fatherAddress,
-            phone: fatherPhoneNumber,
-            work_place: fatherWorkPlace,
-            passport: fatherPassportFile ? fatherPassportFile.name : null,
-            place_of_birth: fatherPlaceOfBirth,
-        });
-        if (fatherPassportFile) formData.append('father_passport_file', fatherPassportFile);
-    }
-    if (motherFirstName || motherLastName) {
-        guardians.push({
-            id: 0,
-            application: 0,
-            relation: 'mother',
-            first_name: motherFirstName,
-            last_name: motherLastName,
-            father_name: motherFathersName,
-            date_of_birth: motherDateOfBirth,
-            area: motherArea,
-            address: motherAddress,
-            phone: motherPhoneNumber,
-            work_place: motherWorkPlace,
-            passport: motherPassportFile ? motherPassportFile.name : null,
-            place_of_birth: motherPlaceOfBirth,
-        });
-        if (motherPassportFile) formData.append('mother_passport_file', motherPassportFile);
-    }
-    if (guardians.length > 0) {
-        formData.append('guardians', JSON.stringify(guardians));
-    }
-
-    // Other Education Info
-    if (otherEducationType) formData.append('other_education_type', otherEducationType);
-    if (otherEducationCountry) formData.append('other_education_country', otherEducationCountry);
-    if (graduatedUniversity) formData.append('graduated_university', graduatedUniversity);
-    if (otherGraduatedYear) formData.append('other_graduated_year', String(otherGraduatedYear));
-    if (otherCertificateFile) formData.append('other_certificate_file', otherCertificateFile);
-
-    // Other Documents
-    if (militaryServiceFile) formData.append('military_service_document', militaryServiceFile);
-    if (healthDocumentFile) formData.append('health_document_file', healthDocumentFile);
-    if (familyDocumentFile) formData.append('family_document_file', familyDocumentFile);
-    if (informationFile) formData.append('information_file', informationFile);
-    if (anotherInfoFile) formData.append('another_info_file', anotherInfoFile);
-    if (image3x4File) formData.append('image_3x4_file', image3x4File);
+    console.log('Submitting application:', application);
 
     try {
-      await addApplicationToList(formData);
-      toast.success('Application submitted successfully!');
-      navigate('/');
-    } catch (error: any) {
-      console.error("Submission error:", error);
-      if (error.response && error.response.data) {
-        const messages = getErrorMessages(error.response.data);
-        toast.error(`Submission failed: ${messages}`);
-      } else {
-        toast.error('Failed to submit application. Check console for details.');
-      }
+      mutation.mutate(application);
+    } catch (error) {
+      console.error('Error submitting application:', error);
     }
   };
 
-  const areaOptions = isAreaLoading || areaError ? [] : areaData?.results?.map((area: IArea) => ({
-    id: area.id.toString(),
-    name: area.name,
-  })) || [];
+  if (isAreasLoading || isMajorsLoading) {
+    return <div>Loading...</div>; 
+  }
 
-  const activeMajorsOptions = isActiveMajorsLoading || activeMajorsError ? [] : activeMajorsData?.results?.map((major: IActiveMajors) => ({
-    id: major.id.toString(),
-    name: major.major_name,
-  })) || [];
-
-  const regionOptions = isRegionsLoading || regionsError ? [] : regionsData?.results?.map((region: IRegions) => ({
-    id: region.id.toString(),
-    name: region.name,
-  })) || [];
+  if (isAreasError || isMajorsError) {
+    return <div>Error fetching data.</div>; 
+  }
 
   return (
     <Container>
-      <div className="px-5 py-10">
-        <form onSubmit={handleSubmit}>
-          <div className="flex justify-between items-center mb-5">
-            <h1 className="text-lg">Add Application</h1>
-            <div className="space-x-4">
-              <LinkButton to="/" variant="cancel">Cancel</LinkButton>
-              <button type="submit" disabled={isPending} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
-                {isPending ? "Submitting..." : "Add Application"}
-              </button>
-            </div>
+      <form
+        onSubmit={handleSubmit}
+        className="p-4"
+        encType="multipart/form-data"
+      >
+        <h2 className="text-xl font-bold mb-4">Application Form</h2>
+
+        <TableLayout className="w-full mb-6">
+          <h3 className="text-lg font-semibold mb-2">Personal Information</h3>
+          <table className="w-full">
+            <tbody>
+              
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">First Name:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={application.user.first_name}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter first name"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Last Name:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={application.user.last_name}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter last name"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Father's Name:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="father_name"
+                    value={application.user.father_name}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter father's name"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Nationality:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="nationality"
+                    value={application.user.nationality}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter nationality"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Date of Birth:</td>
+                <td className="p-3">
+                  <input
+                    type="date"
+                    name="date_of_birth"
+                    value={formatDateForInput(application.user.date_of_birth)}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Address:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="address"
+                    value={application.user.address}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter address"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Place of Birth:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="place_of_birth"
+                    value={application.user.place_of_birth}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter place of birth"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Home Phone:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="home_phone"
+                    value={application.user.home_phone}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter home phone"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Area:</td>
+                <td className="p-3">
+                  <select
+                    name="area"
+                    value={application.user.area}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value={0}>Select Area</option>
+                    {areas?.results.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Gender:</td>
+                <td className="p-3">
+                  <select
+                    name="gender"
+                    value={application.user.gender}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Phone:</td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    name="phone"
+                    value={application.user.phone}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter phone number"
+                  />
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-3 font-medium">Email:</td>
+                <td className="p-3">
+                  <input
+                    type="email"
+                    name="email"
+                    value={application.user.email}
+                    onChange={handleUserChange}
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter email"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </TableLayout>
+
+        {/* Majors */}
+        <TableLayout className="w-full mb-6">
+          <h3 className="text-lg font-semibold mb-2">Major Selection</h3>
+          <table className="w-full">
+            <tbody>
+              <tr className="border-b">
+                <td className="p-3 font-medium">Primary Major:</td>
+                <td className="p-3">
+                  <select
+                    value={application.primary_major}
+                    onChange={(e) =>
+                      setApplication((prev) => ({
+                        ...prev,
+                        primary_major: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value={0}>Select Major</option>
+                    {majors?.results.map((major) => (
+                      <option key={major.id} value={major.id}>
+                        {major.major}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+
+              <tr>
+                <td className="p-3 font-medium">Admission Majors:</td>
+                <td className="p-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {majors?.results.map((major) => (
+                      <div key={major.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`major-${major.id}`}
+                          checked={application.admission_major.includes(
+                            major.id
+                          )}
+                          onChange={(e) => {
+                            const newMajors = e.target.checked
+                              ? [...application.admission_major, major.id]
+                              : application.admission_major.filter(
+                                  (id) => id !== major.id
+                                );
+                            setApplication((prev) => ({
+                              ...prev,
+                              admission_major: newMajors,
+                            }));
+                          }}
+                          className="mr-2"
+                        />
+                        <label htmlFor={`major-${major.id}`}>
+                          {major.major}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </TableLayout>
+
+        {/* Guardians */}
+        <TableLayout className="w-full mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Guardians</h3>
+            <button
+              type="button"
+              onClick={addGuardian}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Add Guardian
+            </button>
           </div>
-
-          {/* Degree Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Degree Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="degree" className="block text-sm font-medium text-gray-700">Degree Type:</label>
-                <Select options={[{ id: "BACHELOR", name: "Bachelor" }, { id: "MASTER", name: "Master" }]} placeholder="Select Degree Type" value={applicationData.degree} onChange={(value) => setApplicationData((prev) => ({ ...prev, degree: value as 'BACHELOR' | 'MASTER' }))} />
-              </div>
-              <div>
-                <label htmlFor="primary_major" className="block text-sm font-medium text-gray-700">Primary Major:</label>
-                {isActiveMajorsLoading ? (<div>Loading...</div>) : activeMajorsError ? (<div>Error.</div>) : (<Select options={activeMajorsOptions} placeholder="Select Primary Major" value={String(applicationData.primary_major)} onChange={(value) => setApplicationData((prev) => ({ ...prev, primary_major: Number(value) }))} />)}
-              </div>
+          {application.guardians.map((guardian, index) => (
+            <div key={index} className="mb-4 border p-4 rounded relative">
+              <button
+                type="button"
+                onClick={() => removeItem('guardians', index)}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Relation:</td>
+                    <td className="p-3">
+                      <select
+                        name="relation"
+                        value={guardian.relation}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="father">Father</option>
+                        <option value="mother">Mother</option>
+                        <option value="grandparent">Grandparent</option>
+                        <option value="sibling">Sibling</option>
+                        <option value="uncle">Uncle</option>
+                        <option value="aunt">Aunt</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">First Name:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="first_name"
+                        value={guardian.first_name}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter first name"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Last Name:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="last_name"
+                        value={guardian.last_name}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter last name"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Father's Name:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="father_name"
+                        value={guardian.father_name}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter father's name"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Date of Birth:</td>
+                    <td className="p-3">
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        value={formatDateForInput(guardian.date_of_birth)}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Place of Birth:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="place_of_birth"
+                        value={guardian.place_of_birth}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter place of birth"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Phone:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="phone"
+                        value={guardian.phone}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter phone number"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Address:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="address"
+                        value={guardian.address}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter address"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium">Work Place:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="work_place"
+                        value={guardian.work_place}
+                        onChange={(e) => handleGuardianChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter work place"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </section>
+          ))}
+        </TableLayout>
 
-          {/* Personal Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Personal Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="first_name" className="block text-sm font-medium text-gray-700">First Name:</label><input type="text" id="first_name" name="first_name" value={applicationData.first_name} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" required /></div>
-              <div><label htmlFor="last_name" className="block text-sm font-medium text-gray-700">Last Name:</label><input type="text" id="last_name" name="last_name" value={applicationData.last_name} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" required /></div>
-              <div><label htmlFor="father_name" className="block text-sm font-medium text-gray-700">Father's Name (Applicant):</label><input type="text" id="father_name" name="father_name" value={applicationData.father_name} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender:</label><Select options={[{ id: "MALE", name: "Male" }, { id: "FEMALE", name: "Female" }]} placeholder="Select Gender" value={applicationData.gender} onChange={(value) => setApplicationData((prev) => ({ ...prev, gender: value as 'MALE' | 'FEMALE' }))} /></div>
-              <div><label htmlFor="nationality" className="block text-sm font-medium text-gray-700">Nationality:</label><input type="text" id="nationality" name="nationality" value={applicationData.nationality} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700">Date of Birth:</label><input type="date" id="date_of_birth" name="date_of_birth" value={applicationData.date_of_birth} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="area" className="block text-sm font-medium text-gray-700">Area:</label>{isAreaLoading ? (<div>Loading...</div>) : areaError ? (<div>Error.</div>) : (<Select options={areaOptions} placeholder="Select Area" value={String(applicationData.area)} onChange={(value) => setApplicationData((prev) => ({ ...prev, area: Number(value) }))} />)}</div>
-              <div className="md:col-span-2"><label htmlFor="address" className="block text-sm font-medium text-gray-700">Address:</label><textarea id="address" name="address" value={applicationData.address} onChange={handleChange} rows={2} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="place_of_birth" className="block text-sm font-medium text-gray-700">Place of Birth:</label><input type="text" id="place_of_birth" name="place_of_birth" value={applicationData.place_of_birth} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
+        {/* Institutions */}
+        <TableLayout className="w-full mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Educational Institutions</h3>
+            <button
+              type="button"
+              onClick={addInstitution}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Add Institution
+            </button>
+          </div>
+          {application.institutions.map((institution, index) => (
+            <div key={index} className="mb-4 border p-4 rounded relative">
+              <button
+                type="button"
+                onClick={() => removeItem('institutions', index)}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Institution Name:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="name"
+                        value={institution.name}
+                        onChange={(e) => handleInstitutionChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter institution name"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">School GPA:</td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        name="school_gpa"
+                        value={institution.school_gpa}
+                        onChange={(e) => handleInstitutionChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter GPA"
+                        step="0.01"
+                        min="0"
+                        max="5"
+                      />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Graduated Year:</td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        name="graduated_year"
+                        value={institution.graduated_year}
+                        onChange={(e) => handleInstitutionChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter graduation year"
+                        min="1900"
+                        max={new Date().getFullYear()}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium">Certificate:</td>
+                    <td className="p-3">
+                      <input
+                        type="file"
+                        name="certificate"
+                        onChange={(e) => handleInstitutionFileUpload(index, e)}
+                        className="w-full p-2 border rounded"
+                        disabled={isFileUploadLoading} // Prevent multiple uploads
+                      />
+                      {institution.certificateFileId && (
+                        <span className="text-sm text-gray-600">
+                          Uploaded File ID: {institution.certificateFileId}
+                        </span>
+                      )}
+                      {isFileUploadLoading && <div>File is uploading...</div>}
+                      {fileUploadError && <div>Error uploading file.</div>}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </section>
+          ))}
+        </TableLayout>
 
-          {/* Contact Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Contact Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><label htmlFor="home_phone" className="block text-sm font-medium text-gray-700">Home Phone:</label><input type="tel" id="home_phone" name="home_phone" value={applicationData.home_phone} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="cell_phone" className="block text-sm font-medium text-gray-700">Cellphone:</label><input type="tel" id="cell_phone" name="cell_phone" value={applicationData.cell_phone} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="email" className="block text-sm font-medium text-gray-700">E-mail:</label><input type="email" id="email" name="email" value={applicationData.email} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" required /></div>
+        {/* Olympics */}
+        <TableLayout className="w-full mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Olympic Participation</h3>
+            <button
+              type="button"
+              onClick={addOlympic}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Add Olympic
+            </button>
+          </div>
+          {application.olympics.map((olympic, index) => (
+            <div key={index} className="mb-4 border p-4 rounded relative">
+              <button
+                type="button"
+                onClick={() => removeItem('olympics', index)}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Olympic Type:</td>
+                    <td className="p-3">
+                      <select
+                        name="type"
+                        value={olympic.type}
+                        onChange={(e) => handleOlympicChange(index, e)}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="area">Area</option>
+                        <option value="region">Region</option>
+                        <option value="state">State</option>
+                        <option value="international">International</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Description:</td>
+                    <td className="p-3">
+                      <input
+                        type="text"
+                        name="description"
+                        value={olympic.description}
+                        onChange={(e) => handleOlympicChange(index, e)}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter description"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium">Certificate File:</td>
+                    <td className="p-3">
+                      <input
+                        type="file"
+                        name="file"
+                        onChange={(e) => handleOlympicFileUpload(index, e)}
+                        className="w-full p-2 border rounded"
+                      />
+                      {olympic.olympicFileId && (
+                        <span className="text-sm text-gray-600">
+                          Uploaded File ID: {olympic.olympicFileId}
+                        </span>
+                      )}
+                      {isFileUploadLoading && <div>File is uploading...</div>}
+                      {fileUploadError && <div>Error uploading file.</div>}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </section>
+          ))}
+        </TableLayout>
 
-          {/* Passport Information (Applicant) */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Applicant's Passport Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="serial_number" className="block text-sm font-medium text-gray-700">Serial Number:</label><input type="text" id="serial_number" name="serial_number" value={applicationData.serial_number} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="document_number" className="block text-sm font-medium text-gray-700">Document Number:</label><input type="text" id="document_number" name="document_number" value={applicationData.document_number} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="given_date" className="block text-sm font-medium text-gray-700">Date Given:</label><input type="date" id="given_date" name="given_date" value={applicationData.given_date} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="given_by" className="block text-sm font-medium text-gray-700">Given By:</label><input type="text" id="given_by" name="given_by" value={applicationData.given_by} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="applicant_passport_file_input" className="block text-sm font-medium text-gray-700">Passport (File Upload):</label>
-                <input type="file" id="applicant_passport_file_input" onChange={(e) => handleApplicantFileChange(e, setApplicantPassportFile, 'passport')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
+        {/* Documents */}
+        <TableLayout className="w-full mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Documents</h3>
+            <button
+              type="button"
+              onClick={addDocument}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Add Document
+            </button>
+          </div>
+          {application.documents.map((document, index) => (
+            <div key={index} className="mb-4 border p-4 rounded relative">
+              <button
+                type="button"
+                onClick={() => removeItem('documents', index)}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Document Type:</td>
+                    <td className="p-3">
+                      <select
+                        name="type"
+                        value={document.type}
+                        onChange={(e) => handleDocumentChange(index, e)}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="school_certificate">
+                          School Certificate
+                        </option>
+                        <option value="passport">Passport</option>
+                        <option value="military_document">
+                          Military Document
+                        </option>
+                        <option value="information">Information</option>
+                        <option value="relationship_tree">
+                          Relationship Tree
+                        </option>
+                        <option value="medical_record">Medical Record</option>
+                        <option value="description">Description</option>
+                        <option value="terjiimehal">Terjiimehal</option>
+                        <option value="labor_book">Labor Book</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium">Document File:</td>
+                    <td className="p-3">
+                      <input
+                        type="file"
+                        name="file"
+                        onChange={(e) => handleDocumentFileUpload(index, e)}
+                        className="w-full p-2 border rounded"
+                      />
+                      {document.documentFileId && (
+                        <span className="text-sm text-gray-600">
+                          Uploaded File ID: {document.documentFileId}
+                        </span>
+                      )}
+                      {isFileUploadLoading && <div>File is uploading...</div>}
+                      {fileUploadError && <div>Error uploading file.</div>}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </section>
+          ))}
+        </TableLayout>
 
-          {/* Father's Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Father's Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="father_first_name" className="block text-sm font-medium text-gray-700">First Name:</label><input type="text" id="father_first_name" value={fatherFirstName} onChange={(e) => setFatherFirstName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_last_name" className="block text-sm font-medium text-gray-700">Last Name:</label><input type="text" id="father_last_name" value={fatherLastName} onChange={(e) => setFatherLastName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_fathers_name" className="block text-sm font-medium text-gray-700">Father's Father Name:</label><input type="text" id="father_fathers_name" value={fatherFathersName} onChange={(e) => setFatherFathersName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_date_of_birth" className="block text-sm font-medium text-gray-700">Date of Birth:</label><input type="date" id="father_date_of_birth" value={fatherDateOfBirth} onChange={(e) => setFatherDateOfBirth(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_area" className="block text-sm font-medium text-gray-700">Area:</label>{isAreaLoading ? (<div>Loading...</div>) : <Select options={areaOptions} placeholder="Select Area" value={String(fatherArea)} onChange={(v) => setFatherArea(Number(v))} />}</div>
-              <div><label htmlFor="father_place_of_birth" className="block text-sm font-medium text-gray-700">Place of Birth:</label><input type="text" id="father_place_of_birth" value={fatherPlaceOfBirth} onChange={(e) => setFatherPlaceOfBirth(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div className="md:col-span-2"><label htmlFor="father_address" className="block text-sm font-medium text-gray-700">Address:</label><textarea id="father_address" value={fatherAddress} onChange={(e) => setFatherAddress(e.target.value)} rows={2} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_phone_number" className="block text-sm font-medium text-gray-700">Phone Number:</label><input type="tel" id="father_phone_number" value={fatherPhoneNumber} onChange={(e) => setFatherPhoneNumber(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="father_work_place" className="block text-sm font-medium text-gray-700">Work Place:</label><input type="text" id="father_work_place" value={fatherWorkPlace} onChange={(e) => setFatherWorkPlace(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-                <div>
-                    <label htmlFor="father_passport_file_input" className="block text-sm font-medium text-gray-700">Passport (File):</label>
-                    <input type="file" id="father_passport_file_input"  onChange={(e) => handleGenericFileChange(e, setFatherPassportFile, 'father_passport_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-                </div>
-            </div>
-          </section>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? 'Submitting...' : 'Submit Application'}
+        </button>
 
-          {/* Mother's Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Mother's Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="mother_first_name" className="block text-sm font-medium text-gray-700">First Name:</label><input type="text" id="mother_first_name" value={motherFirstName} onChange={(e) => setMotherFirstName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_last_name" className="block text-sm font-medium text-gray-700">Last Name:</label><input type="text" id="mother_last_name" value={motherLastName} onChange={(e) => setMotherLastName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_fathers_name" className="block text-sm font-medium text-gray-700">Mother's Father Name:</label><input type="text" id="mother_fathers_name" value={motherFathersName} onChange={(e) => setMotherFathersName(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_date_of_birth" className="block text-sm font-medium text-gray-700">Date of Birth:</label><input type="date" id="mother_date_of_birth" value={motherDateOfBirth} onChange={(e) => setMotherDateOfBirth(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_area" className="block text-sm font-medium text-gray-700">Area:</label>{isAreaLoading ? (<div>Loading...</div>) : <Select options={areaOptions} placeholder="Select Area" value={String(motherArea)} onChange={(v) => setMotherArea(Number(v))} />}</div>
-              <div><label htmlFor="mother_place_of_birth" className="block text-sm font-medium text-gray-700">Place of Birth:</label><input type="text" id="mother_place_of_birth" value={motherPlaceOfBirth} onChange={(e) => setMotherPlaceOfBirth(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div className="md:col-span-2"><label htmlFor="mother_address" className="block text-sm font-medium text-gray-700">Address:</label><textarea id="mother_address" value={motherAddress} onChange={(e) => setMotherAddress(e.target.value)} rows={2} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_phone_number" className="block text-sm font-medium text-gray-700">Phone Number:</label><input type="tel" id="mother_phone_number" value={motherPhoneNumber} onChange={(e) => setMotherPhoneNumber(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="mother_work_place" className="block text-sm font-medium text-gray-700">Work Place:</label><input type="text" id="mother_work_place" value={motherWorkPlace} onChange={(e) => setMotherWorkPlace(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="mother_passport_file_input" className="block text-sm font-medium text-gray-700">Passport (File):</label>
-                <input type="file" id="mother_passport_file_input" onChange={(e) => handleGenericFileChange(e, setMotherPassportFile, 'mother_passport_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-            </div>
-          </section>
-
-          {/* School Graduation Information */}
-          <section className="mb-6 p-4 border rounded-md">
-      
-            <h2 className="text-md font-semibold mb-3">School Graduation Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="school_name" className="block text-sm font-medium text-gray-700">Graduated School:</label><input type="text" id="school_name" name="school_name" value={applicationData.school_name} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="school_graduated_year" className="block text-sm font-medium text-gray-700">Graduated Year:</label><input type="number" id="school_graduated_year" name="school_graduated_year" value={applicationData.school_graduated_year || ''} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="region_of_school" className="block text-sm font-medium text-gray-700">Region of School:</label>{isRegionsLoading ? (<div>Loading...</div>) : <Select options={regionOptions} placeholder="Select Region" value={String(applicationData.region_of_school)} onChange={(v) => setApplicationData(prev => ({ ...prev, region_of_school: Number(v) }))} />}</div>
-              <div><label htmlFor="district_of_school" className="block text-sm font-medium text-gray-700">District of School:</label><input type="text" id="district_of_school" name="district_of_school" value={applicationData.district_of_school} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="school_gpa" className="block text-sm font-medium text-gray-700">School GPA:</label>
-                <input type="number" step="0.01" id="school_gpa" name="school_gpa" value={applicationData.school_gpa || ''} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" />
-              </div>
-              <div>
-                <label htmlFor="school_certificate_file_input" className="block text-sm font-medium text-gray-700">Certificate of Graduation (File):</label>
-                <input type="file" id="school_certificate_file_input"  onChange={(e) => handleApplicantFileChange(e, setSchoolCertificateFile, 'certificate_of_school')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-            </div>
-          </section>
-
-          {/* Other Education Information */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Other Education Information (Optional)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="other_education_type" className="block text-sm font-medium text-gray-700">Type:</label><input type="text" id="other_education_type" value={otherEducationType} onChange={(e) => setOtherEducationType(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="other_education_country" className="block text-sm font-medium text-gray-700">Country:</label><input type="text" id="other_education_country" value={otherEducationCountry} onChange={(e) => setOtherEducationCountry(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="graduated_university" className="block text-sm font-medium text-gray-700">Graduated University:</label><input type="text" id="graduated_university" value={graduatedUniversity} onChange={(e) => setGraduatedUniversity(e.target.value)} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="other_graduated_year" className="block text-sm font-medium text-gray-700">Graduated Year:</label><input type="number" id="other_graduated_year" value={otherGraduatedYear} onChange={(e) => setOtherGraduatedYear(e.target.value ? Number(e.target.value) : '')} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="other_certificate_file_input" className="block text-sm font-medium text-gray-700">Certificate (File):</label>
-                <input type="file" id="other_certificate_file_input"  onChange={(e) => handleGenericFileChange(e, setOtherCertificateFile, 'other_certificate_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-            </div>
-          </section>
-
-          {/* Awards */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Awards</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label htmlFor="award" className="block text-sm font-medium text-gray-700">Award Type:</label><Select options={[{ id: "area", name: "Area" }, { id: "region", name: "Region" }, { id: "state", name: "State" }, { id: "international", name: "International" }, { id: "other", name: "Other" }]} placeholder="Select Award Type" value={applicationData.award} onChange={(v) => setApplicationData(prev => ({ ...prev, award: v as any }))} /></div>
-              <div className="md:col-span-2"><label htmlFor="award_description" className="block text-sm font-medium text-gray-700">Description:</label><textarea id="award_description" name="award_description" value={applicationData.award_description} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="award_certificate_file_input" className="block text-sm font-medium text-gray-700">Certificate (File):</label>
-                <input type="file" id="award_certificate_file_input"  onChange={(e) => handleApplicantFileChange(e, setAwardCertificateFile, 'award_certificate')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-            </div>
-          </section>
-
-          {/* Other Information & Documents */}
-          <section className="mb-6 p-4 border rounded-md">
-            <h2 className="text-md font-semibold mb-3">Other Information & Documents</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div><label htmlFor="military_service" className="block text-sm font-medium text-gray-700">Military Service Status:</label><Select options={[{ id: "female", name: "Female (N/A)" }, { id: "served", name: "Served" }, { id: "not_served", name: "Not Served" }]} placeholder="Select Status" value={applicationData.military_service} onChange={(v) => setApplicationData(prev => ({ ...prev, military_service: v as any }))} /></div>
-              <div className="md:col-span-2"><label htmlFor="military_service_note" className="block text-sm font-medium text-gray-700">Military Service Note:</label><textarea id="military_service_note" name="military_service_note" value={applicationData.military_service_note} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div>
-                <label htmlFor="military_service_file_input" className="block text-sm font-medium text-gray-700">Military Service Document (File):</label>
-                <input type="file" id="military_service_file_input" onChange={(e) => handleGenericFileChange(e, setMilitaryServiceFile, 'military_service_document')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div>
-                <label htmlFor="health_document_file_input" className="block text-sm font-medium text-gray-700">Health Document (File):</label>
-                <input type="file" id="health_document_file_input" onChange={(e) => handleGenericFileChange(e, setHealthDocumentFile, 'health_document_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div>
-                <label htmlFor="family_document_file_input" className="block text-sm font-medium text-gray-700">Family Document (File):</label>
-                <input type="file" id="family_document_file_input" onChange={(e) => handleGenericFileChange(e, setFamilyDocumentFile, 'family_document_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div>
-                <label htmlFor="information_file_input" className="block text-sm font-medium text-gray-700">Information (File):</label>
-                <input type="file" id="information_file_input" onChange={(e) => handleGenericFileChange(e, setInformationFile, 'information_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div>
-                <label htmlFor="another_info_file_input" className="block text-sm font-medium text-gray-700">Another Info (File):</label>
-                <input type="file" id="another_info_file_input" onChange={(e) => handleGenericFileChange(e, setAnotherInfoFile, 'another_info_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div>
-                <label htmlFor="image_3x4_file_input" className="block text-sm font-medium text-gray-700">3x4 Image (File):</label>
-                <input type="file" id="image_3x4_file_input" accept="image/*" onChange={(e) => handleGenericFileChange(e, setImage3x4File, 'image_3x4_file')} className="mt-1 p-1.5 w-full border rounded-md text-sm" />
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <input type="checkbox" id="assign_job_by_sign" name="assign_job_by_sign" checked={applicationData.assign_job_by_sign} onChange={handleChange} className="h-4 w-4" />
-                <label htmlFor="assign_job_by_sign" className="text-sm">Assign job by sign?</label>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <input type="checkbox" id="orphan" name="orphan" checked={applicationData.orphan} onChange={handleChange} className="h-4 w-4" />
-                <label htmlFor="orphan" className="text-sm">Orphan?</label>
-              </div>
-            </div>
-          </section>
-
-          {/* Internal Fields (Date Approved, Status) */}
-          <section className="mb-6 p-4 border rounded-md bg-gray-50">
-            <h2 className="text-md font-semibold mb-3">Internal Use (Admin Fields)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label htmlFor="date_approved" className="block text-sm font-medium text-gray-700">Date Approved:</label><input type="datetime-local" id="date_approved" name="date_approved" value={applicationData.date_approved} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-              <div><label htmlFor="status" className="block text-sm font-medium text-gray-700">Status:</label><Select options={[{ id: "PENDING", name: "Pending" }, { id: "APPROVED", name: "Approved" }, { id: "REJECTED", name: "Rejected" }]} placeholder="Select Status" value={applicationData.status} onChange={(v) => setApplicationData(prev => ({ ...prev, status: v as any }))} /></div>
-              <div className="md:col-span-2"><label htmlFor="rejection_reason" className="block text-sm font-medium text-gray-700">Rejection Reason:</label><textarea id="rejection_reason" name="rejection_reason" value={applicationData.rejection_reason} onChange={handleChange} className="mt-1 p-2 w-full border rounded-md" /></div>
-            </div>
-          </section>
-        </form>
-      </div>
+        {mutation.isError && (
+          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+            Error submitting application
+          </div>
+        )}
+        {mutation.isSuccess && (
+          <div className="mt-4 p-3 bg-green-100 text-green-700 rounded">
+            Application submitted successfully!
+          </div>
+        )}
+      </form>
     </Container>
   );
 };
 
-export default AddApplicationPage;
+export default ApplicationForm;

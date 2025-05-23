@@ -16,7 +16,7 @@ export interface AdmissionMajor {
     id:number;
     user: User;
     full_name: string;
-    admission_major: AdmissionMajor[];
+    primary_major: AdmissionMajor;
     admission: number;
     admission_year: string;
     status: "PENDING" | "APPROVED" | "REJECTED"; 

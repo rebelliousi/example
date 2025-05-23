@@ -1,20 +1,8 @@
-import {
-  RelationType,
-  Degree,
-  Gender,
-  OlympicAwardType,
-  MilitaryStatus,
-  ApplicationStatus,
-} from './enum'; // kendi yoluna göre import et
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api';
 
-
 export interface Guardian {
-  id: number;
-  application: number;
-  relation: RelationType;
+  relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
   first_name: string;
   last_name: string;
   father_name: string;
@@ -23,58 +11,70 @@ export interface Guardian {
   phone: string;
   address: string;
   work_place: string;
-  passport: string;
 }
 
-export interface IApplication {
-  degree: Degree;
-  primary_major: number;
-  admission_major: number[];
+export interface Institution {
+  application?: number;
+  name: string;
+  school_gpa: number;
+  graduated_year: number;
+  certificate?: File | null;
+}
+
+export interface Olympic {
+  application?: number;
+  type: 'area' | 'region' | 'state' | 'international' | 'other';
+  description: string;
+  file?: File | null;
+}
+
+export interface Document {
+  owner?: number;
+  type:
+    | 'school_certificate'
+    | 'passport'
+    | 'military_document'
+    | 'information'
+    | 'relationship_tree'
+    | 'medical_record'
+    | 'description'
+    | 'terjiimehal'
+    | 'labor_book';
+  file?: File | null;
+}
+
+export interface ApplicationUser {
+  username?: string;
   first_name: string;
   last_name: string;
   father_name: string;
-  gender: Gender;
-  nationality: string;
-  date_of_birth: string;
   area: number;
+  gender: 'male' | 'female';
+  nationality: string;
+  date_of_birth : string;
   address: string;
   place_of_birth: string;
   home_phone: string;
-  cell_phone: string;
+  phone: string;
   email: string;
-  serial_number: string;
-  document_number: string;
-  given_date: string;
-  given_by: string;
-  passport: string;
-  school_name: string;
-  school_graduated_year: number;
-  school_gpa: number;
-  region_of_school: number;
-  district_of_school: string;
-  certificate_of_school: string;
-  award: OlympicAwardType;
-  award_description: string;
-  award_certificate: string;
-  military_service: MilitaryStatus;
-  military_service_note: string;
-  assign_job_by_sign: boolean;
-  orphan: boolean;
-  number: number;
-  guardians: Guardian[];
-  rejection_reason: string;
-  date_approved: string;
-  status: ApplicationStatus;
 }
 
+export interface IApplication {
+  primary_major: number;
+  admission_major: number[];
+  user: ApplicationUser;
+  guardians: Guardian[];
+  institutions: Institution[];
+  olympics: Olympic[];
+  documents: Document[];
+}
 
 export const useAddApplication = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (newApplication: IApplication) => {
-      const response = await api.post('/admission/application/', newApplication);
-      return response.data;
+      return await api.post('/admission/application/', newApplication);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application'] });
