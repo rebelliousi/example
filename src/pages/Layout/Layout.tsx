@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import Main from "../../components/Main/Main"
+import Dashboard from "../Dashboard/Dashboard"
 
 
 const Layout:React.FC=()=>{
@@ -11,6 +12,7 @@ const Layout:React.FC=()=>{
            
              
                 <Main>
+                  
                 <Outlet/>
                 </Main>
         

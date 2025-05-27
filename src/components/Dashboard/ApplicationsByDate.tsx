@@ -84,14 +84,7 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
         </div>
       </div>
       <div>
-        <OnlineApplications
-        //  totalOnlineApplications={totalOnlineApplications}
-        //  totalVerified={totalVerified}
-        //  totalWaiting={totalWaiting}
-        //  verifiedPercentage={verifiedPercentage}
-        //  waitingPercentage={waitingPercentage}
-        />
-      </div>
+        </div>
     </div>
   );
 };

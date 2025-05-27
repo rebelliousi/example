@@ -23,7 +23,7 @@ const GenderInfo = () => {
           <div className="text-xs text-blue-500 mt-1">15%</div>
         </div>
       </div>
-      <SpecialGroups />
+     
     </div>
   );
 };

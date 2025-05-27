@@ -546,7 +546,7 @@ const EditApplicationForm: React.FC = () => {
             date_of_birth: application.user.date_of_birth
                 ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
                 : '',
-            username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
+            // username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
             area: application.user.area !== null ? application.user.area : 0,  // area dönüşümü
             gender: application.user.gender === 'male' ? 'male' : 'female', // gender dönüşümü
         },
@@ -593,6 +593,34 @@ const EditApplicationForm: React.FC = () => {
         multiple: false, // tek dosya yüklemesi için
         beforeUpload: () => false,
         listType: "picture-card" as UploadListType,
+    };
+
+    const YearPicker = (props: any) => {
+        return (
+            <DatePicker
+                {...props}
+                picker="year"
+                style={{ width: '100%' }}
+                format="YYYY"
+            />
+        );
+    };
+
+    const handleGraduationYearChange = (index: number, date: moment.Moment | null) => {
+        if (!application) return;
+        const year = date ? date.year() : null;
+        setApplication((prev) => {
+            if (!prev) return null;
+            const newInstitutions = [...prev.institutions];
+            newInstitutions[index] = {
+                ...newInstitutions[index],
+                graduated_year: year !== null ? Number(year) : 0,
+            };
+            return {
+                ...prev,
+                institutions: newInstitutions,
+            };
+        });
     };
 
     if (isLoading || !application) {
@@ -925,13 +953,13 @@ const EditApplicationForm: React.FC = () => {
                                 </div>
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Father's Name:</label>
-                                                                        <div className="p-4 w-[400px]">
+                                    <div className="p-4 w-[400px]">
                                         <Input
                                             className="py-2"
                                             type="text"
                                             name="father_name"
                                             value={guardian.father_name}
-                                                                                        onChange={(e) =>
+                                            onChange={(e) =>
                                                 handleGuardianChange(
                                                     index,
                                                     'father_name',
@@ -1111,8 +1139,7 @@ const EditApplicationForm: React.FC = () => {
                                             value={institution.school_gpa}
                                             onChange={(e) => handleInstitutionChange(index, e)}
                                             placeholder="Enter GPA"
-                                            step="0.01"
-                                            min="0"
+        
                                             max="5"
                                         />
                                     </div>
@@ -1122,16 +1149,11 @@ const EditApplicationForm: React.FC = () => {
                                     <label className="p-3 font-medium w-48">
                                         Graduated Year:
                                     </label>
-                                    <div className="p-4 w-[400px]">
-                                        <Input
-                                            className="py-2"
-                                            type="number"
-                                            name="graduated_year"
-                                            value={institution.graduated_year}
-                                            onChange={(e) => handleInstitutionChange(index, e)}
-                                            placeholder="Enter graduation year"
-                                            min="1900"
-                                            max={new Date().getFullYear()}
+                                     <div className="p-4 w-[400px]">
+                                      <YearPicker
+                                      className='py-2'
+                                            value={institution.graduated_year ? moment(institution.graduated_year.toString(), 'YYYY') : null}
+                                            onChange={(date:any) => handleGraduationYearChange(index, date)}
                                         />
                                     </div>
                                 </div>

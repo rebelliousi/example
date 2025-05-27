@@ -559,6 +559,33 @@ const ApplicationForm: React.FC = () => {
         listType: "picture-card" as UploadListType,
     };
 
+    const YearPicker = (props: any) => {
+        return (
+            <DatePicker
+                {...props}
+                picker="year"
+                style={{ width: '100%' }}
+                format="YYYY"
+            />
+        );
+    };
+
+    const handleGraduationYearChange = (index: number, date: moment.Moment | null) => {
+        const year = date ? date.year() : null;
+        setApplication((prev) => {
+            const newInstitutions = [...prev.institutions];
+            newInstitutions[index] = {
+                ...newInstitutions[index],
+                graduated_year: year !== null ? Number(year) : 0,
+            };
+            return {
+                ...prev,
+                institutions: newInstitutions,
+            };
+        });
+    };
+
+
     return (
         <Container>
             <form
@@ -956,7 +983,7 @@ const ApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Address:</label>
                                     <div className="p-4 w-[400px]">
-                                        <Input
+                                                                                <Input
                                             className="py-2"
                                             type="text"
                                             name="address"
@@ -1073,9 +1100,8 @@ const ApplicationForm: React.FC = () => {
                                             value={institution.school_gpa}
                                             onChange={(e) => handleInstitutionChange(index, e)}
                                             placeholder="Enter GPA"
-                                            step="0.01"
-                                            min="0"
-                                            max="5"
+                                            max='5'
+
                                         />
                                     </div>
                                 </div>
@@ -1085,15 +1111,10 @@ const ApplicationForm: React.FC = () => {
                                         Graduated Year:
                                     </label>
                                     <div className="p-4 w-[400px]">
-                                        <Input
-                                            className="py-2"
-                                            type="number"
-                                            name="graduated_year"
-                                            value={institution.graduated_year}
-                                            onChange={(e) => handleInstitutionChange(index, e)}
-                                            placeholder="Enter graduation year"
-                                            min="1900"
-                                            max={new Date().getFullYear()}
+                                      <YearPicker
+                                       className='py-2'
+                                            value={institution.graduated_year ? moment(institution.graduated_year.toString(), 'YYYY') : null}
+                                            onChange={(date:any) => handleGraduationYearChange(index, date)}
                                         />
                                     </div>
                                 </div>
