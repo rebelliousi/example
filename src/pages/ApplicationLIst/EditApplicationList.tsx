@@ -22,8 +22,8 @@ import { useEditApplication } from '../../hooks/ApplicationList/useEditApplicati
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 
 interface InstitutionWithFiles extends Omit<Institution, 'certificates'> {
-    certificates: number[]; // Changed to number array as expected by API
-    certificateFilePaths?: string[]; // Store file paths temporarily for display
+    certificates: number[];
+    certificateFilePaths?: string[];
 }
 
 interface OlympicWithFiles extends Omit<Olympic, 'files'> {
@@ -39,14 +39,16 @@ interface DocumentWithFiles extends Omit<Document, 'files'> {
 interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
     documents: number[];
     documentFilePaths?: string[];
-    relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt'; // Güncellendi
+    relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians'> {
+interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'primary_major' | 'admission_major'> {
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
     documents: DocumentWithFiles[];
     guardians: GuardianWithFiles[];
+    primary_major: number | null;
+    admission_major: (number | null)[]; // admission_major için tip tanımını ekledim
 }
 
 const EditApplicationForm: React.FC = () => {
@@ -68,7 +70,7 @@ const EditApplicationForm: React.FC = () => {
         if (applicationData) {
             const initialApplicationState: IApplicationWithFiles = {
                 primary_major: applicationData.primary_major,
-                admission_major: applicationData.admission_major,
+                admission_major: [null, null, null],
                 user: {
                     first_name: applicationData.user.first_name,
                     last_name: applicationData.user.last_name,
@@ -83,7 +85,7 @@ const EditApplicationForm: React.FC = () => {
                     phone: applicationData.user.phone,
                     email: applicationData.user.email,
                 },
-               guardians: applicationData?.user?.guardians?.map(guardian => {
+                guardians: applicationData?.user?.guardians?.map(guardian => {
                     const documents = guardian?.documents ? guardian.documents.map(doc => {
                         const firstFile = doc?.files?.[0];
                         return firstFile?.id || 0;
@@ -123,12 +125,16 @@ const EditApplicationForm: React.FC = () => {
                     files: olympic.files.map(file => file.id),
                     olympicFilePaths: olympic.files.map(file => file.path)
                 })),
-                documents: applicationData?.user?.documents?.map(doc => ({ // Access documents through user
+                documents: applicationData?.user?.documents?.map(doc => ({
                     type: doc.type,
                     files: doc.files.map(file => file.id),
                     documentFilePaths: doc.files.map(file => file.path)
                 })) || [],
             };
+             // Mevcut admission_major değerlerini initialApplicationState'e aktar
+            if (applicationData.admission_major && applicationData.admission_major.length === 3) {
+                initialApplicationState.admission_major = [...applicationData.admission_major];
+            }
             setApplication(initialApplicationState);
         }
     }, [applicationData]);
@@ -211,11 +217,11 @@ const EditApplicationForm: React.FC = () => {
                             guardians: newGuardians,
                         };
                     });
-                    message.success('File uploaded successfully'); //Feedback
+                    message.success('File uploaded successfully');
                 },
                 onError: (error: any) => {
                     console.error('File upload failed', error);
-                    message.error('File upload failed'); //Feedback
+                    message.error('File upload failed');
                 },
             });
         }
@@ -259,7 +265,6 @@ const EditApplicationForm: React.FC = () => {
 
             uploadFile(formData, {
                 onSuccess: (data) => {
-                    // Backend'den dönen dosya yolunu sakla ve dosyayı ID olarak kaydet
                     setApplication((prev) => {
                         if (!prev) return null;
                         const newInstitutions = [...prev.institutions];
@@ -276,11 +281,11 @@ const EditApplicationForm: React.FC = () => {
                             institutions: newInstitutions,
                         };
                     });
-                    message.success('File uploaded successfully'); //Feedback
+                    message.success('File uploaded successfully');
                 },
                 onError: (error: any) => {
                     console.error('File upload failed', error);
-                    message.error('File upload failed'); //Feedback
+                    message.error('File upload failed');
                 },
             });
         }
@@ -355,11 +360,11 @@ const EditApplicationForm: React.FC = () => {
                             olympics: newOlympics,
                         };
                     });
-                    message.success('File uploaded successfully'); //Feedback
+                    message.success('File uploaded successfully');
                 },
                 onError: (error: any) => {
                     console.error('File upload failed', error);
-                    message.error('File upload failed'); //Feedback
+                    message.error('File upload failed');
                 },
             });
         }
@@ -410,11 +415,11 @@ const EditApplicationForm: React.FC = () => {
                             documents: newDocuments,
                         };
                     });
-                    message.success('File uploaded successfully'); //Feedback
+                    message.success('File uploaded successfully');
                 },
                 onError: (error: any) => {
                     console.error('File upload failed', error);
-                    message.error('File upload failed'); //Feedback
+                    message.error('File upload failed');
                 },
             });
         }
@@ -499,7 +504,7 @@ const EditApplicationForm: React.FC = () => {
         setApplication((prev) => {
             if (!prev) return null;
             const newItems = [...prev[type]];
-            newItems.splice(index, 1); // Remove the item at the specified index
+            newItems.splice(index, 1);
 
             return {
                 ...prev,
@@ -508,70 +513,77 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
+     const handleAdmissionMajorChange = (index: number, value: number | null) => {
+        setApplication(prev => {
+            if (!prev) return null;
+            const newAdmissionMajors = [...prev.admission_major];
+            newAdmissionMajors[index] = value;
+            return { ...prev, admission_major: newAdmissionMajors };
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!application || !id) return;
 
-        // Check if all required fields are filled (add more checks if needed)
+        // Required alanlar kontrolü
         if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
-            message.error('Please fill in all required fields.');
+            message.error('Lütfen zorunlu alanları doldurun.');
             return;
         }
 
         const formattedApplication: IApplication = {
-
-            primary_major: application.primary_major,
-            admission_major: application.admission_major,
-            user: {
-                ...application.user,
-                date_of_birth: application.user.date_of_birth
-                    ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format(
-                        'YYYY-MM-DD'
-                    )
-                    : '',
-                username: applicationData?.user.username || '',
-            },
-            guardians: application.guardians.map((guardian) => ({
-                ...guardian,
-                date_of_birth: guardian.date_of_birth
-                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('YYYY-MM-DD')
-                    : '',
-                documentFilePaths: undefined,
-                relation: guardian.relation // Relation'ı olduğu gibi gönder
-            })),
-            institutions: application.institutions.map(institution => ({
-                ...institution,
-                certificateFilePaths: undefined, // remove this field before sending to API
-            })),
-            olympics: application.olympics.map(olympic => ({
-                ...olympic,
-                olympicFilePaths: undefined, // remove this field before sending to API
-            })),
-            documents: application.documents.map(document => ({
-                ...document,
-                documentFilePaths: undefined, // remove this field before sending to API
-            })),
-        };
-
+    primary_major: application.primary_major !== null ? application.primary_major : 0,
+    admission_major: application.admission_major.filter(major => major !== null) as number[],
+   user: {
+    ...application.user,
+    date_of_birth: application.user.date_of_birth
+        ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
+        : '',
+    username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
+    area: application.user.area !== null ? application.user.area : 0,  // area dönüşümü
+    gender: application.user.gender === 'male' ? 'male' : 'female', // gender dönüşümü
+},
+    guardians: application.guardians.map((guardian) => ({
+        ...guardian,
+        date_of_birth: guardian.date_of_birth
+            ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY') // Giriş ve çıkış formatlarını belirtin
+            : '',
+        documentFilePaths: undefined,
+        relation: guardian.relation
+    })),
+    institutions: application.institutions.map(institution => ({
+        ...institution,
+        certificateFilePaths: undefined,
+    })),
+    olympics: application.olympics.map(olympic => ({
+        ...olympic,
+        olympicFilePaths: undefined,
+    })),
+    documents: application.documents.map(document => ({
+        ...document,
+        documentFilePaths: undefined,
+    })),
+};
         try {
             mutation.mutate({ id: Number(id), data: formattedApplication }, {
                 onSuccess: () => {
-                    message.success('Application submitted successfully!');
+                    message.success('Başvuru başarıyla güncellendi!');
                     navigate('/application_list');
                 },
                 onError: (error: any) => {
-                    console.error('Mutation failed:', error);
-                    message.error('Application submission failed!');
+                    console.error('Güncelleme başarısız:', error);
+                    message.error('Başvuru güncellenirken bir hata oluştu!');
                 },
             });
         } catch (error) {
-            console.error('Error submitting application:', error);
-            message.error('An unexpected error occurred.');
+            console.error('Başvuru gönderilirken hata oluştu:', error);
+            message.error('Beklenmedik bir hata oluştu.');
         }
     };
 
     if (isLoading || !application) {
-        return <div><LoadingIndicator/></div>;
+        return <div><LoadingIndicator /></div>;
     }
 
     return (
@@ -803,35 +815,27 @@ const EditApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start space-x-5 mb-2">
-                            <label className="p-3 font-medium w-48">Admission Majors:</label>
-                            <div className="p-3 w-[400px]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {majors?.results.map((major) => (
-                                        <div key={major.id} className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                id={`major-${major.id}`}
-                                                checked={application.admission_major.includes(major.id)}
-                                                onChange={(e) => {
-                                                    const newMajors = e.target.checked
-                                                        ? [...application.admission_major, major.id]
-                                                        : application.admission_major.filter(
-                                                            (id) => id !== major.id
-                                                        );
-                                                    setApplication((prev) => prev ? ({
-                                                        ...prev,
-                                                        admission_major: newMajors,
-                                                    }) : null);
-                                                }}
-                                                className="mr-2"
-                                            />
-                                            <label htmlFor={`major-${major.id}`}>{major.major}</label>
-                                        </div>
-                                    ))}
+                        {/* Admission Majors - Using Three Select Components */}
+                        {[0, 1, 2].map((index) => (
+                            <div className="flex items-center space-x-5 mb-2" key={index}>
+                                <label className="p-3 font-medium w-48">Admission Major {index + 1}:</label>
+                                <div className="p-4 w-[400px]">
+                                    <Select
+                                        value={application.admission_major[index] || null}
+                                        onChange={(value) => handleAdmissionMajorChange(index, value)}
+                                        style={{ width: '100%', height: '40px' }}
+                                        placeholder={`Select Admission Major ${index + 1}`}
+                                    >
+                                        <Select.Option value={null}>None</Select.Option> {/* Allow selecting no major */}
+                                        {majors?.results.map((major) => (
+                                            <Select.Option key={major.id} value={major.id}>
+                                                {major.major}
+                                            </Select.Option>
+                                        ))}
+                                    </Select>
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
@@ -869,7 +873,7 @@ const EditApplicationForm: React.FC = () => {
                                             <Select.Option value="uncle">Uncle</Select.Option>
                                             <Select.Option value="aunt">Aunt</Select.Option>
                                         </Select>
-                                                                            </div>
+                                    </div>
                                 </div>
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">First Name:</label>
@@ -914,7 +918,7 @@ const EditApplicationForm: React.FC = () => {
                                             type="text"
                                             name="father_name"
                                             value={guardian.father_name}
-                                            onChange={(e) =>
+                                                                                        onChange={(e) =>
                                                 handleGuardianChange(
                                                     index,
                                                     'father_name',
@@ -925,7 +929,7 @@ const EditApplicationForm: React.FC = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-5 mb-2">
+                                <div className="flex items-center  space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Date of Birth:</label>
                                     <div className="p-4 w-[400px]">
                                         <DatePicker

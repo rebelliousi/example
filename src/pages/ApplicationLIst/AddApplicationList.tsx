@@ -39,17 +39,17 @@ interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
     documentFilePaths?: string[];
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians'| 'primary_major'| 'user'> {
+interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians'| 'primary_major'| 'user'| 'admission_major'> {
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
     documents: DocumentWithFiles[];
     guardians: GuardianWithFiles[];
-    primary_major: number | null; // primary_major için null değerini de kabul et
+    primary_major: number | null;
     user: {
         first_name: string;
         last_name: string;
         father_name: string;
-        area: number | null; // area için null değerini de kabul et
+        area: number | null;
         gender: string;
         nationality: string;
         date_of_birth: string;
@@ -59,17 +59,18 @@ interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'oly
         phone: string;
         email: string;
     };
+    admission_major: (number | null)[]; // Change admission_major to accept null and number
 }
 
 const ApplicationForm: React.FC = () => {
     const [application, setApplication] = useState<IApplicationWithFiles>({
-        primary_major: null, // Başlangıç değeri null olarak ayarlandı
-        admission_major: [],
+        primary_major: null,
+        admission_major: [null, null, null], // Initialize as three null values
         user: {
             first_name: '',
             last_name: '',
             father_name: '',
-            area: null, // Başlangıç değeri null olarak ayarlandı
+            area: null,
             gender: 'male',
             nationality: '',
             date_of_birth: '',
@@ -475,6 +476,15 @@ const ApplicationForm: React.FC = () => {
         });
     };
 
+    const handleAdmissionMajorChange = (index: number, value: number | null) => {
+        setApplication(prev => {
+            const newAdmissionMajors = [...prev.admission_major];
+            newAdmissionMajors[index] = value;
+            return { ...prev, admission_major: newAdmissionMajors };
+        });
+    };
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -485,7 +495,8 @@ const ApplicationForm: React.FC = () => {
 
         const formattedApplication: IApplication = {
             ...application,
-             primary_major: application.primary_major !== null ? application.primary_major : 0, 
+             primary_major: application.primary_major !== null ? application.primary_major : 0,
+            admission_major: application.admission_major.filter(major => major !== null) as number[], // Filter out null values and cast to number[]
             user: {
                 ...application.user,
                 date_of_birth: application.user.date_of_birth
@@ -546,6 +557,7 @@ const ApplicationForm: React.FC = () => {
                         Personal Information
                     </h3>
                     <div className="flex flex-col">
+                        {/* Personal Information Fields */}
                         <div className="flex items-center space-x-5 mb-2">
                             <label className="p-3 font-medium w-48">First Name:</label>
                             <div className="p-4 w-[400px]">
@@ -762,35 +774,27 @@ const ApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start space-x-5 mb-2">
-                            <label className="p-3 font-medium w-48">Admission Majors:</label>
-                            <div className="p-3 w-[400px]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {majors?.results.map((major) => (
-                                        <div key={major.id} className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                id={`major-${major.id}`}
-                                                checked={application.admission_major.includes(major.id)}
-                                                onChange={(e) => {
-                                                    const newMajors = e.target.checked
-                                                        ? [...application.admission_major, major.id]
-                                                        : application.admission_major.filter(
-                                                            (id) => id !== major.id
-                                                        );
-                                                    setApplication((prev) => ({
-                                                        ...prev,
-                                                        admission_major: newMajors,
-                                                    }));
-                                                }}
-                                                className="mr-2"
-                                            />
-                                            <label htmlFor={`major-${major.id}`}>{major.major}</label>
-                                        </div>
-                                    ))}
+                        {/* Admission Majors - Using Three Select Components */}
+                        {[0, 1, 2].map((index) => (
+                            <div className="flex items-center space-x-5 mb-2" key={index}>
+                                <label className="p-3 font-medium w-48">Admission Major {index + 1}:</label>
+                                <div className="p-4 w-[400px]">
+                                    <Select
+                                        value={application.admission_major[index] || null}
+                                        onChange={(value) => handleAdmissionMajorChange(index, value)}
+                                        style={{ width: '100%', height: '40px' }}
+                                        placeholder={`Select Admission Major ${index + 1}`}
+                                    >
+                                        <Select.Option value={null}>Major</Select.Option> {/* Allow selecting no major */}
+                                        {majors?.results.map((major) => (
+                                            <Select.Option key={major.id} value={major.id}>
+                                                {major.major}
+                                            </Select.Option>
+                                        ))}
+                                    </Select>
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
