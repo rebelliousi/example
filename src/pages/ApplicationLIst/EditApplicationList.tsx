@@ -9,7 +9,8 @@ import {
     Olympic,
 } from '../../hooks/ApplicationList/useAddApplicationList';
 import { useSendFiles } from '../../hooks/ApplicationList/useSendFiles';
-import { Select, DatePicker, Input, message } from 'antd';
+import { Select, DatePicker, Input, message, Upload } from 'antd';
+import { UploadFile, UploadListType } from 'antd/es/upload/interface';
 import 'antd';
 import moment from 'moment';
 import Container from '../../components/Container/Container';
@@ -20,6 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
 import { useEditApplication } from '../../hooks/ApplicationList/useEditApplication';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
+import { InboxOutlined } from '@ant-design/icons';
 
 interface InstitutionWithFiles extends Omit<Institution, 'certificates'> {
     certificates: number[];
@@ -48,7 +50,7 @@ interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'oly
     documents: DocumentWithFiles[];
     guardians: GuardianWithFiles[];
     primary_major: number | null;
-    admission_major: (number | null)[]; // admission_major için tip tanımını ekledim
+    admission_major: (number | null)[];
 }
 
 const EditApplicationForm: React.FC = () => {
@@ -190,11 +192,12 @@ const EditApplicationForm: React.FC = () => {
 
     const handleGuardianFileUpload = async (
         index: number,
-        e: React.ChangeEvent<HTMLInputElement>
+        fileList: UploadFile[]
     ) => {
         if (!application) return;
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0].originFileObj as File;
 
             const formData = new FormData();
             formData.append('path', file);
@@ -205,7 +208,7 @@ const EditApplicationForm: React.FC = () => {
                         if (!prev) return null;
                         const newGuardians = [...prev.guardians];
                         const newFiles = [...newGuardians[index].documents, data.id];
-                        const newDocumentFilePaths = [...newGuardians[index].documentFilePaths || [], data.path];
+                        const newDocumentFilePaths = [...(newGuardians[index].documentFilePaths || []), data.path];
 
                         newGuardians[index] = {
                             ...newGuardians[index],
@@ -254,11 +257,12 @@ const EditApplicationForm: React.FC = () => {
 
     const handleInstitutionFileUpload = async (
         index: number,
-        e: React.ChangeEvent<HTMLInputElement>
+        fileList: UploadFile[]
     ) => {
         if (!application) return;
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0].originFileObj as File;
 
             const formData = new FormData();
             formData.append('path', file);
@@ -269,7 +273,7 @@ const EditApplicationForm: React.FC = () => {
                         if (!prev) return null;
                         const newInstitutions = [...prev.institutions];
                         const newCertificates = [...newInstitutions[index].certificates, data.id];
-                        const newCertificateFilePaths = [...newInstitutions[index].certificateFilePaths || [], data.path];
+                        const newCertificateFilePaths = [...(newInstitutions[index].certificateFilePaths || []), data.path];
 
                         newInstitutions[index] = {
                             ...newInstitutions[index],
@@ -331,13 +335,14 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-    const handleOlympicFileUpload = async (
+   const handleOlympicFileUpload = async (
         index: number,
-        e: React.ChangeEvent<HTMLInputElement>
+        fileList: UploadFile[]
     ) => {
         if (!application) return;
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0].originFileObj as File;
 
             const formData = new FormData();
             formData.append('path', file);
@@ -348,7 +353,7 @@ const EditApplicationForm: React.FC = () => {
                         if (!prev) return null;
                         const newOlympics = [...prev.olympics];
                         const newFiles = [...newOlympics[index].files, data.id];
-                        const newOlympicFilePaths = [...newOlympics[index].olympicFilePaths || [], data.path];
+                        const newOlympicFilePaths = [...(newOlympics[index].olympicFilePaths || []), data.path];
 
                         newOlympics[index] = {
                             ...newOlympics[index],
@@ -386,13 +391,14 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-    const handleDocumentFileUpload = async (
+   const handleDocumentFileUpload = async (
         index: number,
-        e: React.ChangeEvent<HTMLInputElement>
+        fileList: UploadFile[]
     ) => {
         if (!application) return;
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0].originFileObj as File;
 
             const formData = new FormData();
             formData.append('path', file);
@@ -403,7 +409,7 @@ const EditApplicationForm: React.FC = () => {
                         if (!prev) return null;
                         const newDocuments = [...prev.documents];
                         const newFiles = [...newDocuments[index].files, data.id];
-                        const newDocumentFilePaths = [...newDocuments[index].documentFilePaths || [], data.path];
+                        const newDocumentFilePaths = [...(newDocuments[index].documentFilePaths || []), data.path];
 
                         newDocuments[index] = {
                             ...newDocuments[index],
@@ -533,38 +539,38 @@ const EditApplicationForm: React.FC = () => {
         }
 
         const formattedApplication: IApplication = {
-    primary_major: application.primary_major !== null ? application.primary_major : 0,
-    admission_major: application.admission_major.filter(major => major !== null) as number[],
-   user: {
-    ...application.user,
-    date_of_birth: application.user.date_of_birth
-        ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
-        : '',
-    username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
-    area: application.user.area !== null ? application.user.area : 0,  // area dönüşümü
-    gender: application.user.gender === 'male' ? 'male' : 'female', // gender dönüşümü
-},
-    guardians: application.guardians.map((guardian) => ({
-        ...guardian,
-        date_of_birth: guardian.date_of_birth
-            ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY') // Giriş ve çıkış formatlarını belirtin
-            : '',
-        documentFilePaths: undefined,
-        relation: guardian.relation
-    })),
-    institutions: application.institutions.map(institution => ({
-        ...institution,
-        certificateFilePaths: undefined,
-    })),
-    olympics: application.olympics.map(olympic => ({
-        ...olympic,
-        olympicFilePaths: undefined,
-    })),
-    documents: application.documents.map(document => ({
-        ...document,
-        documentFilePaths: undefined,
-    })),
-};
+            primary_major: application.primary_major !== null ? application.primary_major : 0,
+            admission_major: application.admission_major.filter(major => major !== null) as number[],
+           user: {
+            ...application.user,
+            date_of_birth: application.user.date_of_birth
+                ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
+                : '',
+            username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
+            area: application.user.area !== null ? application.user.area : 0,  // area dönüşümü
+            gender: application.user.gender === 'male' ? 'male' : 'female', // gender dönüşümü
+        },
+            guardians: application.guardians.map((guardian) => ({
+                ...guardian,
+                date_of_birth: guardian.date_of_birth
+                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY') // Giriş ve çıkış formatlarını belirtin
+                    : '',
+                documentFilePaths: undefined,
+                relation: guardian.relation
+            })),
+            institutions: application.institutions.map(institution => ({
+                ...institution,
+                certificateFilePaths: undefined,
+            })),
+            olympics: application.olympics.map(olympic => ({
+                ...olympic,
+                olympicFilePaths: undefined,
+            })),
+            documents: application.documents.map(document => ({
+                ...document,
+                documentFilePaths: undefined,
+            })),
+        };
         try {
             mutation.mutate({ id: Number(id), data: formattedApplication }, {
                 onSuccess: () => {
@@ -580,6 +586,13 @@ const EditApplicationForm: React.FC = () => {
             console.error('Başvuru gönderilirken hata oluştu:', error);
             message.error('Beklenmedik bir hata oluştu.');
         }
+    };
+
+      const uploadProps = {
+        name: 'file',
+        multiple: false, // tek dosya yüklemesi için
+        beforeUpload: () => false,
+        listType: "picture-card" as UploadListType,
     };
 
     if (isLoading || !application) {
@@ -912,7 +925,7 @@ const EditApplicationForm: React.FC = () => {
                                 </div>
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Father's Name:</label>
-                                    <div className="p-4 w-[400px]">
+                                                                        <div className="p-4 w-[400px]">
                                         <Input
                                             className="py-2"
                                             type="text"
@@ -1016,13 +1029,20 @@ const EditApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Guardian Document File:</label>
                                     <div className="p-4 w-[400px]">
-                                        <Input
-                                            type="file"
-                                            name="file"
-                                            onChange={(e) => handleGuardianFileUpload(index, e)}
-                                            className="w-full p-2 rounded"
-                                            disabled={isFileUploadLoading}
-                                        />
+                                        <Upload.Dragger
+                                            {...uploadProps}
+                                            onChange={(info) => {
+                                                handleGuardianFileUpload(index, info.fileList);
+                                            }}
+                                        >
+                                            <p className="ant-upload-drag-icon">
+                                                <InboxOutlined />
+                                            </p>
+                                            <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                            <p className="ant-upload-hint">
+                                                Support for a single or bulk upload.
+                                            </p>
+                                        </Upload.Dragger>
                                         {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
@@ -1119,13 +1139,20 @@ const EditApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Certificate:</label>
                                     <div className="p-4 w-[400px]">
-                                        <input
-                                            type="file"
-                                            name="certificate"
-                                            onChange={(e) => handleInstitutionFileUpload(index, e)}
-                                            className="w-full p-2"
-                                            disabled={isFileUploadLoading}
-                                        />
+                                        <Upload.Dragger
+                                            {...uploadProps}
+                                            onChange={(info) => {
+                                                handleInstitutionFileUpload(index, info.fileList);
+                                            }}
+                                        >
+                                            <p className="ant-upload-drag-icon">
+                                                <InboxOutlined />
+                                            </p>
+                                            <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                            <p className="ant-upload-hint">
+                                                Support for a single or bulk upload.
+                                            </p>
+                                        </Upload.Dragger>
                                         {institution.certificateFilePaths && institution.certificateFilePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
@@ -1206,13 +1233,20 @@ const EditApplicationForm: React.FC = () => {
                                         Certificate File:
                                     </label>
                                     <div className="p-4 w-[400px]">
-                                        <input
-                                            type="file"
-                                            name="file"
-                                            onChange={(e) => handleOlympicFileUpload(index, e)}
-                                            className="w-full p-2"
-                                            disabled={isFileUploadLoading}
-                                        />
+                                        <Upload.Dragger
+                                            {...uploadProps}
+                                            onChange={(info) => {
+                                                handleOlympicFileUpload(index, info.fileList);
+                                            }}
+                                        >
+                                            <p className="ant-upload-drag-icon">
+                                                <InboxOutlined />
+                                            </p>
+                                            <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                            <p className="ant-upload-hint">
+                                                Support for a single or bulk upload.
+                                            </p>
+                                        </Upload.Dragger>
                                         {olympic.olympicFilePaths && olympic.olympicFilePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
@@ -1297,13 +1331,20 @@ const EditApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Document File:</label>
                                     <div className="p-4 w-[400px]">
-                                        <Input
-                                            type="file"
-                                            name="file"
-                                            onChange={(e) => handleDocumentFileUpload(index, e)}
-                                            className="w-full p-2 rounded"
-                                            disabled={isFileUploadLoading}
-                                        />
+                                        <Upload.Dragger
+                                            {...uploadProps}
+                                            onChange={(info) => {
+                                                handleDocumentFileUpload(index, info.fileList);
+                                            }}
+                                        >
+                                            <p className="ant-upload-drag-icon">
+                                                <InboxOutlined />
+                                            </p>
+                                            <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                            <p className="ant-upload-hint">
+                                                Support for a single or bulk upload.
+                                            </p>
+                                        </Upload.Dragger>
                                         {document.documentFilePaths && document.documentFilePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
