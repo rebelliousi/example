@@ -1,6 +1,7 @@
 import React from "react";
 import OnlineApplications from "./OnlineApplications";
 import { GenderStat, RegionApplication } from "../../hooks/Statistics/useStatistics";
+import ExampleIcon from "../../assets/icons/ExampleIcon";
 
 
 interface ApplicationsByDateProps {
@@ -42,12 +43,22 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
     //  const waitingPercentage = totalOnlineApplications ? ((totalWaiting / totalOnlineApplications) * 100).toFixed(2) : 0;
 
   return (
-    <div className="flex flex-col space-y-5">
-      <div className="bg-white rounded-xl shadow p-4 w-full h-56">
+    <div className="flex flex-col space-y-2">
+      <div className="bg-white rounded-xl shadow p-5 w-full h-auto ">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-sm font-semibold">Applications by date</h3>
-          <span className="text-xs text-gray-400">19.04.2025</span>
+          <div className="flex items-center space-x-2">
+            <ExampleIcon/>
+            <h3 className="text-md font-semibold">
+            Applications by date</h3>
+
+          </div>
+          <div className="flex  items-center space-x-2"> 
+            <ExampleIcon/>
+              <span className="text-sm text-gray-400">19.04.2025</span>
+          </div>
+          
+        
         </div>
 
         {/* Region Filters */}
@@ -61,24 +72,31 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
         </div>
 
         {/* Statistic Box */}
-        <div className="flex items-center justify-center space-x-2">
-          <div className="flex items-center justify-start mt-6">
-            <div className="flex items-center gap-4 bg-blue-50 py-2 px-2">
-              <h1 className="text-5xl font-bold text-blue-600">{totalApplications}</h1>
-              <span className="text-sm text-gray-500">
-                Total <br />
-                application
-              </span>
-            </div>
+        <div className="grid grid-cols-12 gap-2 mt-10">
+          <div className="col-span-5 flex items-center gap-4 bg-blue-50 py-3 px-3 rounded">
+            <h1 className="text-5xl font-bold text-blue-600">{totalApplications}</h1>
+            <span className="text-sm text-gray-500">
+              Total <br />
+              application
+            </span>
           </div>
 
           {/* Gender Info */}
-          <div className="pl-2 flex justify-start mt-6 gap-6 text-sm">
-            <div className="border-r">
-              Girls: <strong>{totalGirls}</strong> ({girlsPercentage}%)
+          <div className="col-span-7 pl-2 flex items-center gap-6 text-sm">
+            <div className="border-r pr-4 flex flex-col items-start">
+              <h1 className="text-md text-[#7C8FAC]"> Girls: </h1>
+              <div className="flex space-x-2  items-baseline" >
+                 <h1 className="text-3xl font-semibold">{totalGirls}</h1>
+                 <p className="text-[#7C8FAC]"> ({girlsPercentage}%)</p>
+              </div>
+             
             </div>
-            <div>
-              Boys: <strong>{totalBoys}</strong> ({boysPercentage}%)
+             <div className="flex flex-col items-start">
+              <h1 className="text-md text-[#7C8FAC]"> Boys: </h1>
+              <div className="flex space-x-2 items-baseline">
+                <h1 className="text-3xl font-semibold">{totalBoys}</h1>
+                <p className="text-[#7C8FAC]">({boysPercentage}%)</p>
+              </div>
             </div>
           </div>
         </div>

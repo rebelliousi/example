@@ -12,7 +12,11 @@ const Dashboard = () => {
   const { data: statistics, isLoading, isError, error } = useStatistics();
 
   if (isLoading) {
-    return <div ><LoadingIndicator/></div>;
+    return (
+      <div>
+        <LoadingIndicator />
+      </div>
+    );
   }
 
   if (isError) {
@@ -23,41 +27,41 @@ const Dashboard = () => {
     return <div>No data available.</div>;
   }
 
+  const maleCount = statistics.gender_stats.find(stat => stat.user__gender === 'male')?.count || 0;
+  const femaleCount = statistics.gender_stats.find(stat => stat.user__gender === 'female')?.count || 0;
+  const malePercentage = statistics.gender_stats.find(stat => stat.user__gender === 'male')?.percentage || 0;
+  const femalePercentage = statistics.gender_stats.find(stat => stat.user__gender === 'female')?.percentage || 0;
+
+
   return (
     <div className="p-6 bg-gray-50 max-2xl:px-5 ">
       <div className="mb-6">
         <ApplicationsTable majors={statistics.majors} />
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        {/* 1. Satır */}
-        <div className="col-span-1">
+      <div className="grid grid-cols-12 gap-5">
+        <div className="col-span-5">
           <ApplicationsByDate
             totalApplications={statistics.total_applications}
             genderStats={statistics.gender_stats}
             applicationsByRegion={statistics.applications_by_region}
           />
         </div>
-        <div className="col-span-1">
-          <GenderInfo
-           
-           // GenderInfo'nun yüksekliğini küçültmek için
-          />
+        <div className="col-span-3">
+          <GenderInfo maleCount={maleCount} femaleCount={femaleCount} malePercentage={malePercentage} femalePercentage={femalePercentage} />
         </div>
-        <div className="col-span-1">
+        <div className="col-span-4">
           <ExamResults />
         </div>
 
-        {/* 2. Satır */}
-        <div className="col-span-1">
+     <div className="col-span-5  mt-[-35px]">
           <OnlineApplications />
         </div>
-        <div className="col-span-1">
+        <div className="col-span-4  mt-[-70px]">
           <SpecialGroups />
-        </div>
-        {/* 3.Sutun bos */}
-        <div className="col-span-1">
-        </div>
+        </div> 
+
+        <div className="col-span-1"></div>
       </div>
     </div>
   );

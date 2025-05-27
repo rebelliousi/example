@@ -14,7 +14,7 @@ const exams: Exam[] = [
 
 const ExamResults = () => {
   return (
-    <div className="bg-white rounded-xl shadow p-4 w-[500px] h-[260px]">
+    <div className="bg-white rounded-xl shadow p-4 h-[260px]">
       <h3 className="text-lg font-semibold mb-4">Exam Results (Passed)</h3>
 
       {/* Region filters */}
