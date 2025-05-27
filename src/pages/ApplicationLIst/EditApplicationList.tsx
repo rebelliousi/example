@@ -82,27 +82,33 @@ const EditApplicationForm: React.FC = () => {
                     phone: applicationData.user.phone,
                     email: applicationData.user.email,
                 },
-                guardians: applicationData?.user?.guardians?.map(guardian => ({  // Use optional chaining here
-                    relation: (guardian.relation && ['mother', 'father', 'grandparent', 'sibling', 'uncle', 'aunt'].includes(guardian.relation))
-                        ? guardian.relation as 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt'
-                        : 'father',
-                    first_name: guardian.first_name,
-                    last_name: guardian.last_name,
-                    father_name: guardian.father_name,
-                    date_of_birth: guardian.date_of_birth,
-                    place_of_birth: guardian.place_of_birth,
-                    phone: guardian.phone,
-                    address: guardian.address,
-                    work_place: guardian.work_place,
-                    documents: guardian?.documents?.map(doc => {
-                        const firstFile = doc?.files?.[0]; // Safely access the first file
-                        return firstFile?.id || 0; // Return the id or 0 if anything is missing
-                    }).filter(id => id !== 0) || [],  // Filter out any 0 values
-                    documentFilePaths: guardian?.documents?.map(doc => {
-                        const firstFile = doc?.files?.[0]; // Safely access the first file
-                        return firstFile?.path || ''; // Return the path or '' if anything is missing
-                    }) || []
-                }) || []),
+               guardians: applicationData?.user?.guardians?.map(guardian => {
+                    const documents = guardian?.documents ? guardian.documents.map(doc => {
+                        const firstFile = doc?.files?.[0];
+                        return firstFile?.id || 0;
+                    }).filter(id => id !== 0) : [];
+
+                    const documentFilePaths = guardian?.documents ? guardian.documents.map(doc => {
+                        const firstFile = doc?.files?.[0];
+                        return firstFile?.path || '';
+                    }) : [];
+
+                    return {
+                        relation: (guardian.relation && ['mother', 'father', 'grandparent', 'sibling', 'uncle', 'aunt'].includes(guardian.relation))
+                            ? guardian.relation as 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt'
+                            : 'father',
+                        first_name: guardian.first_name,
+                        last_name: guardian.last_name,
+                        father_name: guardian.father_name,
+                        date_of_birth: guardian.date_of_birth,
+                        place_of_birth: guardian.place_of_birth,
+                        phone: guardian.phone,
+                        address: guardian.address,
+                        work_place: guardian.work_place,
+                        documents: documents,
+                        documentFilePaths: documentFilePaths
+                    };
+                }) || [],
                 institutions: applicationData.institutions.map(institution => ({
                     name: institution.name,
                     school_gpa: institution.school_gpa,
@@ -862,7 +868,7 @@ const EditApplicationForm: React.FC = () => {
                                             <Select.Option value="uncle">Uncle</Select.Option>
                                             <Select.Option value="aunt">Aunt</Select.Option>
                                         </Select>
-                                    </div>
+                                                                            </div>
                                 </div>
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">First Name:</label>
@@ -921,434 +927,434 @@ const EditApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Date of Birth:</label>
                                     <div className="p-4 w-[400px]">
-                                        <                                            DatePicker
-                                                format="DD.MM.YYYY"
-                                                value={formatDateForInput(guardian.date_of_birth)}
-                                                onChange={(date) =>
-                                                    handleGuardianChange(index, 'date_of_birth', date)
-                                                }
-                                                style={{ width: '100%', height: '40px' }}
-                                            />
-                                        </div>
+                                        <DatePicker
+                                            format="DD.MM.YYYY"
+                                            value={formatDateForInput(guardian.date_of_birth)}
+                                            onChange={(date) =>
+                                                handleGuardianChange(index, 'date_of_birth', date)
+                                            }
+                                            style={{ width: '100%', height: '40px' }}
+                                        />
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">
-                                            Place of Birth:
-                                        </label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="place_of_birth"
-                                                value={guardian.place_of_birth}
-                                                onChange={(e) =>
-                                                    handleGuardianChange(
-                                                        index,
-                                                        'place_of_birth',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Enter place of birth"
-                                            />
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">
+                                        Place of Birth:
+                                    </label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="place_of_birth"
+                                            value={guardian.place_of_birth}
+                                            onChange={(e) =>
+                                                handleGuardianChange(
+                                                    index,
+                                                    'place_of_birth',
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Enter place of birth"
+                                        />
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Phone:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="phone"
-                                                value={guardian.phone}
-                                                onChange={(e) => handleGuardianChange(index, 'phone', e.target.value)}
-                                                placeholder="Enter phone number"
-                                            />
-                                        </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Phone:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="phone"
+                                            value={guardian.phone}
+                                            onChange={(e) => handleGuardianChange(index, 'phone', e.target.value)}
+                                            placeholder="Enter phone number"
+                                        />
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Address:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="address"
-                                                value={guardian.address}
-                                                onChange={(e) =>
-                                                    handleGuardianChange(index, 'address', e.target.value)
-                                                }
-                                                placeholder="Enter address"
-                                            />
-                                        </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Address:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="address"
+                                            value={guardian.address}
+                                            onChange={(e) =>
+                                                handleGuardianChange(index, 'address', e.target.value)
+                                            }
+                                            placeholder="Enter address"
+                                        />
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Work Place:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="work_place"
-                                                value={guardian.work_place}
-                                                onChange={(e) =>
-                                                    handleGuardianChange(
-                                                        index,
-                                                        'work_place',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Enter work place"
-                                            />
-                                        </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Work Place:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="work_place"
+                                            value={guardian.work_place}
+                                            onChange={(e) =>
+                                                handleGuardianChange(
+                                                    index,
+                                                    'work_place',
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Enter work place"
+                                        />
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Guardian Document File:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                type="file"
-                                                name="file"
-                                                onChange={(e) => handleGuardianFileUpload(index, e)}
-                                                className="w-full p-2 rounded"
-                                                disabled={isFileUploadLoading}
-                                            />
-                                            {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 && (
-                                                <div className="text-sm text-gray-600">
-                                                    Uploaded Files:
-                                                    <ul>
-                                                        {guardian.documentFilePaths.map((path, idx) => (
-                                                            <li key={idx}>{path}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {isFileUploadLoading && <div>File is uploading...</div>}
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Guardian Document File:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            type="file"
+                                            name="file"
+                                            onChange={(e) => handleGuardianFileUpload(index, e)}
+                                            className="w-full p-2 rounded"
+                                            disabled={isFileUploadLoading}
+                                        />
+                                        {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 && (
+                                            <div className="text-sm text-gray-600">
+                                                Uploaded Files:
+                                                <ul>
+                                                    {guardian.documentFilePaths.map((path, idx) => (
+                                                        <li key={idx}>{path}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {isFileUploadLoading && <div>File is uploading...</div>}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addGuardian}
-                            className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
-                        >
-                            <PlusIcon /> Add Guardian
-                        </button>
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addGuardian}
+                        className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+                    >
+                        <PlusIcon /> Add Guardian
+                    </button>
+                </div>
+
+                {/* Institutions */}
+                <div className="w-full mb-40">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-md text-[#4570EA] font-semibold">
+                            Educational Institutions
+                        </h3>
                     </div>
 
-                    {/* Institutions */}
-                    <div className="w-full mb-40">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-md text-[#4570EA] font-semibold">
-                                Educational Institutions
-                            </h3>
-                        </div>
-
-                        {application.institutions.map((institution, index) => (
-                            <div key={index} className="mb-4 p-4 rounded relative">
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem('institutions', index)}
-                                    className="absolute top-2 right-2 text-gray-400"
-                                >
-                                    <TrashIcon />
-                                </button>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">
-                                            Institution Name:
-                                        </label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="name"
-                                                value={institution.name}
-                                                onChange={(e) => handleInstitutionChange(index, e)}
-                                                placeholder="Enter institution name"
-                                            />
-                                        </div>
+                    {application.institutions.map((institution, index) => (
+                        <div key={index} className="mb-4 p-4 rounded relative">
+                            <button
+                                type="button"
+                                onClick={() => removeItem('institutions', index)}
+                                className="absolute top-2 right-2 text-gray-400"
+                            >
+                                <TrashIcon />
+                            </button>
+                            <div className="flex flex-col">
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">
+                                        Institution Name:
+                                    </label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="name"
+                                            value={institution.name}
+                                            onChange={(e) => handleInstitutionChange(index, e)}
+                                            placeholder="Enter institution name"
+                                        />
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">School GPA:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="number"
-                                                name="school_gpa"
-                                                value={institution.school_gpa}
-                                                onChange={(e) => handleInstitutionChange(index, e)}
-                                                placeholder="Enter GPA"
-                                                step="0.01"
-                                                min="0"
-                                                max="5"
-                                            />
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">School GPA:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="number"
+                                            name="school_gpa"
+                                            value={institution.school_gpa}
+                                            onChange={(e) => handleInstitutionChange(index, e)}
+                                            placeholder="Enter GPA"
+                                            step="0.01"
+                                            min="0"
+                                            max="5"
+                                        />
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">
-                                            Graduated Year:
-                                        </label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="number"
-                                                name="graduated_year"
-                                                value={institution.graduated_year}
-                                                onChange={(e) => handleInstitutionChange(index, e)}
-                                                placeholder="Enter graduation year"
-                                                min="1900"
-                                                max={new Date().getFullYear()}
-                                            />
-                                        </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">
+                                        Graduated Year:
+                                    </label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="number"
+                                            name="graduated_year"
+                                            value={institution.graduated_year}
+                                            onChange={(e) => handleInstitutionChange(index, e)}
+                                            placeholder="Enter graduation year"
+                                            min="1900"
+                                            max={new Date().getFullYear()}
+                                        />
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Certificate:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <input
-                                                type="file"
-                                                name="certificate"
-                                                onChange={(e) => handleInstitutionFileUpload(index, e)}
-                                                className="w-full p-2"
-                                                disabled={isFileUploadLoading}
-                                            />
-                                            {institution.certificateFilePaths && institution.certificateFilePaths.length > 0 && (
-                                                <div className="text-sm text-gray-600">
-                                                    Uploaded Files:
-                                                    <ul>
-                                                        {institution.certificateFilePaths.map((path, idx) => (
-                                                            <li key={idx}>{path}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {isFileUploadLoading && <div>File is uploading...</div>}
-                                        </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Certificate:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <input
+                                            type="file"
+                                            name="certificate"
+                                            onChange={(e) => handleInstitutionFileUpload(index, e)}
+                                            className="w-full p-2"
+                                            disabled={isFileUploadLoading}
+                                        />
+                                        {institution.certificateFilePaths && institution.certificateFilePaths.length > 0 && (
+                                            <div className="text-sm text-gray-600">
+                                                Uploaded Files:
+                                                <ul>
+                                                    {institution.certificateFilePaths.map((path, idx) => (
+                                                        <li key={idx}>{path}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {isFileUploadLoading && <div>File is uploading...</div>}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addInstitution}
-                            className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
-                        >
-                            <PlusIcon /> Add Institution
-                        </button>
-                    </div>
-
-                    {/* Olympics */}
-                    <div className="w-full mb-40">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-md text-[#4570EA] font-semibold">
-                                Olympic Participation
-                            </h3>
                         </div>
-                        {application.olympics.map((olympic, index) => (
-                            <div key={index} className="mb-4 p-4 rounded relative">
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem('olympics', index)}
-                                    className="absolute top-2 right-2 text-gray-400"
-                                >
-                                    <TrashIcon />
-                                </button>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Olympic Type:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Select
-                                                value={olympic.type}
-                                                onChange={(value) =>
-                                                    handleOlympicChange(index, value, 'type')
-                                                }
-                                                style={{ width: '100%', height: '40px' }}
-                                            >
-                                                <Select.Option value="area">Area</Select.Option>
-                                                <Select.Option value="region">Region</Select.Option>
-                                                <Select.Option value="state">State</Select.Option>
-                                                <Select.Option value="international">
-                                                    International
-                                                </Select.Option>
-                                                <Select.Option value="other">Other</Select.Option>
-                                            </Select>
-                                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addInstitution}
+                        className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+                    >
+                        <PlusIcon /> Add Institution
+                    </button>
+                </div>
+
+                {/* Olympics */}
+                <div className="w-full mb-40">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-md text-[#4570EA] font-semibold">
+                            Olympic Participation
+                        </h3>
+                    </div>
+                    {application.olympics.map((olympic, index) => (
+                        <div key={index} className="mb-4 p-4 rounded relative">
+                            <button
+                                type="button"
+                                onClick={() => removeItem('olympics', index)}
+                                className="absolute top-2 right-2 text-gray-400"
+                            >
+                                <TrashIcon />
+                            </button>
+                            <div className="flex flex-col">
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Olympic Type:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Select
+                                            value={olympic.type}
+                                            onChange={(value) =>
+                                                handleOlympicChange(index, value, 'type')
+                                            }
+                                            style={{ width: '100%', height: '40px' }}
+                                        >
+                                            <Select.Option value="area">Area</Select.Option>
+                                            <Select.Option value="region">Region</Select.Option>
+                                            <Select.Option value="state">State</Select.Option>
+                                            <Select.Option value="international">
+                                                International
+                                            </Select.Option>
+                                            <Select.Option value="other">Other</Select.Option>
+                                        </Select>
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Description:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                className="py-2"
-                                                type="text"
-                                                name="description"
-                                                value={olympic.description}
-                                                onChange={(e) => handleOlympicInputChange(index, e)}
-                                                placeholder="Enter description"
-                                            />
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Description:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            className="py-2"
+                                            type="text"
+                                            name="description"
+                                            value={olympic.description}
+                                            onChange={(e) => handleOlympicInputChange(index, e)}
+                                            placeholder="Enter description"
+                                        />
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">
-                                            Certificate File:
-                                        </label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                type="file"
-                                                name="file"
-                                                onChange={(e) => handleOlympicFileUpload(index, e)}
-                                                className="w-full p-2"
-                                                disabled={isFileUploadLoading}
-                                            />
-                                            {olympic.olympicFilePaths && olympic.olympicFilePaths.length > 0 && (
-                                                <div className="text-sm text-gray-600">
-                                                    Uploaded Files:
-                                                    <ul>
-                                                        {olympic.olympicFilePaths.map((path, idx) => (
-                                                            <li key={idx}>{path}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {isFileUploadLoading && <div>File is uploading...</div>}
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">
+                                        Certificate File:
+                                    </label>
+                                    <div className="p-4 w-[400px]">
+                                        <input
+                                            type="file"
+                                            name="file"
+                                            onChange={(e) => handleOlympicFileUpload(index, e)}
+                                            className="w-full p-2"
+                                            disabled={isFileUploadLoading}
+                                        />
+                                        {olympic.olympicFilePaths && olympic.olympicFilePaths.length > 0 && (
+                                            <div className="text-sm text-gray-600">
+                                                Uploaded Files:
+                                                <ul>
+                                                    {olympic.olympicFilePaths.map((path, idx) => (
+                                                        <li key={idx}>{path}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {isFileUploadLoading && <div>File is uploading...</div>}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addOlympic}
-                            className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
-                        >
-                            <PlusIcon /> Add Olympic
-                        </button>
-                    </div>
-
-                    {/* Documents */}
-                    <div className="w-full mb-40">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
                         </div>
-                        {application?.documents?.map((document, index) => (
-                            <div key={index} className="mb-4 p-4 rounded relative">
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem('documents', index)}
-                                    className="absolute top-2 right-2 text-gray-400"
-                                >
-                                    <TrashIcon />
-                                </button>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Document Type:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Select
-                                                value={document.type}
-                                                onChange={(value) =>
-                                                    handleDocumentChange(index, value, 'type')
-                                                }
-                                                style={{ width: '100%', height: '40px' }}
-                                            >
-                                                <Select.Option value="school_certificate">
-                                                    School Certificate
-                                                </Select.Option>
-                                                <Select.Option value="passport">Passport</Select.Option>
-                                                <Select.Option value="military_document">
-                                                    Military Document
-                                                </Select.Option>
-                                                <Select.Option value="information">
-                                                    Information
-                                                </Select.Option>
-                                                <Select.Option value="relationship_tree">
-                                                    Relationship Tree
-                                                </Select.Option>
-                                                <Select.Option value="medical_record">
-                                                    Medical Record
-                                                </Select.Option>
-                                                <Select.Option value="description">
-                                                    Description
-                                                </Select.Option>
-                                                <Select.Option value="terjiimehal">
-                                                    Terjiimehal
-                                                </Select.Option>
-                                                <Select.Option value="labor_book">
-                                                    Labor Book
-                                                </Select.Option>
-                                                <Select.Option value="Dushundirish">
-                                                    Dushundirish
-                                                </Select.Option>
-                                            </Select>
-                                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addOlympic}
+                        className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+                    >
+                        <PlusIcon /> Add Olympic
+                    </button>
+                </div>
+
+                {/* Documents */}
+                <div className="w-full mb-40">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
+                    </div>
+                    {application?.documents?.map((document, index) => (
+                        <div key={index} className="mb-4 p-4 rounded relative">
+                            <button
+                                type="button"
+                                onClick={() => removeItem('documents', index)}
+                                className="absolute top-2 right-2 text-gray-400"
+                            >
+                                <TrashIcon />
+                            </button>
+                            <div className="flex flex-col">
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Document Type:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Select
+                                            value={document.type}
+                                            onChange={(value) =>
+                                                handleDocumentChange(index, value, 'type')
+                                            }
+                                            style={{ width: '100%', height: '40px' }}
+                                        >
+                                            <Select.Option value="school_certificate">
+                                                School Certificate
+                                            </Select.Option>
+                                            <Select.Option value="passport">Passport</Select.Option>
+                                            <Select.Option value="military_document">
+                                                Military Document
+                                            </Select.Option>
+                                            <Select.Option value="information">
+                                                Information
+                                            </Select.Option>
+                                            <Select.Option value="relationship_tree">
+                                                Relationship Tree
+                                            </Select.Option>
+                                            <Select.Option value="medical_record">
+                                                Medical Record
+                                            </Select.Option>
+                                            <Select.Option value="description">
+                                                Description
+                                            </Select.Option>
+                                            <Select.Option value="terjiimehal">
+                                                Terjiimehal
+                                            </Select.Option>
+                                            <Select.Option value="labor_book">
+                                                Labor Book
+                                            </Select.Option>
+                                            <Select.Option value="Dushundirish">
+                                                Dushundirish
+                                            </Select.Option>
+                                        </Select>
                                     </div>
-                                    <div className="flex items-center space-x-5 mb-2">
-                                        <label className="p-3 font-medium w-48">Document File:</label>
-                                        <div className="p-4 w-[400px]">
-                                            <Input
-                                                type="file"
-                                                name="file"
-                                                onChange={(e) => handleDocumentFileUpload(index, e)}
-                                                className="w-full p-2 rounded"
-                                                disabled={isFileUploadLoading}
-                                            />
-                                            {document.documentFilePaths && document.documentFilePaths.length > 0 && (
-                                                <div className="text-sm text-gray-600">
-                                                    Uploaded Files:
-                                                    <ul>
-                                                        {document.documentFilePaths.map((path, idx) => (
-                                                            <li key={idx}>{path}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {isFileUploadLoading && <div>File is uploading...</div>}
-                                        </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Document File:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Input
+                                            type="file"
+                                            name="file"
+                                            onChange={(e) => handleDocumentFileUpload(index, e)}
+                                            className="w-full p-2 rounded"
+                                            disabled={isFileUploadLoading}
+                                        />
+                                        {document.documentFilePaths && document.documentFilePaths.length > 0 && (
+                                            <div className="text-sm text-gray-600">
+                                                Uploaded Files:
+                                                <ul>
+                                                    {document.documentFilePaths.map((path, idx) => (
+                                                        <li key={idx}>{path}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {isFileUploadLoading && <div>File is uploading...</div>}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addDocument}
-                            className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
-                        >
-                            <PlusIcon /> Add Document
-                        </button>
-                    </div>
-
-                    <div className="col-span-12 flex justify-end gap-4 items-center">
-                        <LinkButton
-                            to={`/application_list`}
-                            type="button"
-                            variant="cancel"
-                            className="px-4 py-5"
-                        >
-                            Cancel
-                        </LinkButton>
-                        <button
-                            type="submit"
-                            disabled={mutation.isPending}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                        >
-                            {mutation.isPending ? 'Submitting...' : 'Submit'}
-                        </button>
-                    </div>
-
-                    {mutation.isError && (
-                        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
-                            Error submitting application
                         </div>
-                    )}
-                    {mutation.isSuccess && (
-                        <div className="mt-4 p-3 bg-green-100 text-green-700 rounded">
-                            Application submitted successfully!
-                        </div>
-                    )}
-                </form>
-            </Container>
-        );
-    };
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addDocument}
+                        className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+                    >
+                        <PlusIcon /> Add Document
+                    </button>
+                </div>
+
+                <div className="col-span-12 flex justify-end gap-4 items-center">
+                    <LinkButton
+                        to={`/application_list`}
+                        type="button"
+                        variant="cancel"
+                        className="px-4 py-5"
+                    >
+                        Cancel
+                    </LinkButton>
+                    <button
+                        type="submit"
+                        disabled={mutation.isPending}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                    >
+                        {mutation.isPending ? 'Submitting...' : 'Submit'}
+                    </button>
+                </div>
+
+                {mutation.isError && (
+                    <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+                        Error submitting application
+                    </div>
+                )}
+                {mutation.isSuccess && (
+                    <div className="mt-4 p-3 bg-green-100 text-green-700 rounded">
+                        Application submitted successfully!
+                    </div>
+                )}
+            </form>
+        </Container>
+    );
+};
 
 export default EditApplicationForm;
