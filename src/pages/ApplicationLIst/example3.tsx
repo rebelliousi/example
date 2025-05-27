@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useArea } from '../../hooks/Area/useAreas';
 import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import {
@@ -6,7 +6,8 @@ import {
   IApplication,
   Institution,
   Olympic,
-} from '../../hooks/ApplicationList/useAddApplicationList'; // Import interfaces only
+  useAddApplication,
+} from '../../hooks/ApplicationList/useAddApplicationList';
 import { useSendFiles } from '../../hooks/ApplicationList/useSendFiles';
 import { Select, DatePicker, Input } from 'antd';
 import 'antd';
@@ -15,116 +16,90 @@ import Container from '../../components/Container/Container';
 import TrashIcon from '../../assets/icons/TrashIcon';
 import PlusIcon from '../../assets/icons/PlusIcon';
 import { LinkButton } from '../../components/Buttons/LinkButton';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
-import { useEditApplication } from '../../hooks/ApplicationList/useEditApplication';
+import { useNavigate } from 'react-router-dom';
 
-// Define types for document types
-type DocumentType =
-  | 'school_certificate'
-  | 'passport'
-  | 'military_document'
-  | 'information'
-  | 'relationship_tree'
-  | 'medical_record'
-  | 'description'
-  | 'terjiimehal'
-  | 'labor_book'
-  | 'Dushundirish';
-
-interface InstitutionWithFileId extends Institution {
-  certificateFileId?: number;
-  certificate?: File | null; // Allow File type here
+interface InstitutionWithFilePath extends Institution {
+  certificateFilePath?: string; // Dosya yolunu saklamak için
 }
 
-interface OlympicWithFileId extends Olympic {
-  olympicFileId?: number;
-  file?: File | null; // Allow File type here
+interface OlympicWithFilePath extends Olympic {
+  olympicFilePath?: string;
 }
 
-interface DocumentWithFileId extends Document {
-  documentFileId?: number;
-  file?: File | null; // Allow File type here
-  type: DocumentType;  // Make type required to match with the backend
+interface DocumentWithFilePath extends Document {
+  documentFilePath?: string;
 }
 
-interface ApplicationUser {
-  username?: string;
-  first_name: string;
-  last_name: string;
-  father_name: string;
-  area: number;
-  gender: 'male' | 'female';
-  nationality: string;
-  date_of_birth: string;
-  address: string;
-  place_of_birth: string;
-  home_phone: string;
-  phone: string;
-  email: string;
+interface IApplicationWithFilePaths extends IApplication {
+  institutions: InstitutionWithFilePath[];
+  olympics: OlympicWithFilePath[];
+  documents: DocumentWithFilePath[];
 }
 
-export interface Guardian {
-  id?: number;
-  relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
-  first_name: string;
-  last_name: string;
-  father_name: string;
-  date_of_birth: string;
-  place_of_birth: string;
-  phone: string;
-  address: string;
-  work_place: string;
-}
+const ApplicationForm: React.FC = () => {
+  const [application, setApplication] = useState<IApplicationWithFilePaths>({
+    primary_major: 0,
+    admission_major: [],
+    user: {
+      first_name: '',
+      last_name: '',
+      father_name: '',
+      area: 0,
+      gender: 'male',
+      nationality: '',
+      date_of_birth: '',
+      address: '',
+      place_of_birth: '',
+      home_phone: '',
+      phone: '',
+      email: '',
+    },
+    guardians: [
+      {
+        relation: 'father',
+        first_name: '',
+        last_name: '',
+        father_name: '',
+        date_of_birth: '',
+        place_of_birth: '',
+        phone: '',
+        address: '',
+        work_place: '',
+      },
+    ],
+    institutions: [
+      {
+        name: '',
+        school_gpa: 0,
+        graduated_year: 0,
+        certificateFilePath: '',
+      },
+    ],
+    olympics: [
+      {
+        type: 'area',
+        description: '',
+        olympicFilePath: '',
+      },
+    ],
+    documents: [
+      {
+        type: 'school_certificate',
+        documentFilePath: '',
+      },
+    ],
+  });
 
-interface IApplicationWithFileIds extends IApplication {
-  user: ApplicationUser;
-  guardians: Guardian[];
-  institutions: InstitutionWithFileId[];
-  olympics: OlympicWithFileId[];
-  documents: DocumentWithFileId[];
-}
-
-
-const EditApplicationForm: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: applicationData, isLoading } = useApplicationById(id);
-  const [application, setApplication] = useState<IApplicationWithFileIds | null>(null);
   const { data: areas } = useArea();
   const { data: majors } = useAdmissionMajor(1);
-  const mutation = useEditApplication();
+  const mutation = useAddApplication();
   const navigate = useNavigate();
+
   const {
     mutate: uploadFile,
     isPending: isFileUploadLoading,
     isError: fileUploadError,
   } = useSendFiles();
-
-  useEffect(() => {
-    if (applicationData) {
-      setApplication({
-        ...applicationData,
-        user: applicationData.user,
-        guardians: applicationData.guardians || [],
-        institutions: applicationData.institutions.map(inst => ({
-          ...inst,
-          certificateFileId: undefined, // Clear fileId for editing purposes
-          certificate: null
-        })),
-        olympics: applicationData.olympics.map(olympic => ({
-          ...olympic,
-          olympicFileId: undefined, // Clear fileId for editing purposes
-          file: null
-        })),
-        documents: applicationData.documents.map(doc => ({
-          ...doc,
-          documentFileId: undefined, // Clear fileId for editing purposes
-          file: null,
-          type: doc.type as DocumentType // add a type assertion here
-        }))
-      } as IApplicationWithFileIds); // Type assertion for the whole object
-    }
-  }, [applicationData]);
 
   const formatDateForApi = (date: moment.Moment | null): string => {
     if (!date) return '';
@@ -136,36 +111,28 @@ const EditApplicationForm: React.FC = () => {
     return moment(dateString, 'DD.MM.YYYY');
   };
 
-
   const handleUserChange = (name: string, value: any) => {
-    if (!application) return;
     let updatedValue = value;
     if (name === 'date_of_birth') {
       updatedValue = formatDateForApi(value);
     }
 
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        user: {
-          ...prev.user,
-          [name]: updatedValue,
-        },
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        [name]: updatedValue,
+      },
+    }));
   };
 
   const handleGuardianChange = (index: number, name: string, value: any) => {
-    if (!application) return;
-
     let updatedValue = value;
     if (name === 'date_of_birth') {
       updatedValue = formatDateForApi(value);
     }
 
     setApplication((prev) => {
-      if (!prev) return null;
       const newGuardians = [...prev.guardians];
       newGuardians[index] = {
         ...newGuardians[index],
@@ -178,16 +145,12 @@ const EditApplicationForm: React.FC = () => {
     });
   };
 
-
   const handleInstitutionChange = (
     index: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    if (!application) return;
-
     const { name, value } = e.target;
     setApplication((prev) => {
-      if (!prev) return null;
       const newInstitutions = [...prev.institutions];
       newInstitutions[index] = {
         ...newInstitutions[index],
@@ -207,8 +170,6 @@ const EditApplicationForm: React.FC = () => {
     index: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!application) return;
-
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
@@ -217,13 +178,12 @@ const EditApplicationForm: React.FC = () => {
 
       uploadFile(formData, {
         onSuccess: (data) => {
+          // Backend'den dönen dosya yolunu sakla
           setApplication((prev) => {
-            if (!prev) return null;
             const newInstitutions = [...prev.institutions];
             newInstitutions[index] = {
               ...newInstitutions[index],
-              certificateFileId: data.id,
-              certificate: file,
+              certificateFilePath: data.path, // veya data.id, backend ne dönüyorsa
             };
             return {
               ...prev,
@@ -243,10 +203,7 @@ const EditApplicationForm: React.FC = () => {
     value: 'area' | 'region' | 'state' | 'international' | 'other',
     name: string
   ) => {
-    if (!application) return;
-
     setApplication((prev) => {
-      if (!prev) return null;
       const newOlympics = [...prev.olympics];
       newOlympics[index] = {
         ...newOlympics[index],
@@ -263,11 +220,8 @@ const EditApplicationForm: React.FC = () => {
     index: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    if (!application) return;
-
     const { name, value } = e.target;
     setApplication((prev) => {
-      if (!prev) return null;
       const newOlympics = [...prev.olympics];
       newOlympics[index] = {
         ...newOlympics[index],
@@ -284,8 +238,6 @@ const EditApplicationForm: React.FC = () => {
     index: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!application) return;
-
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
@@ -295,12 +247,10 @@ const EditApplicationForm: React.FC = () => {
       uploadFile(formData, {
         onSuccess: (data) => {
           setApplication((prev) => {
-            if (!prev) return null;
             const newOlympics = [...prev.olympics];
             newOlympics[index] = {
               ...newOlympics[index],
-              olympicFileId: data.id,
-              file: file
+              olympicFilePath: data.path, // veya data.id
             };
             return {
               ...prev,
@@ -316,10 +266,7 @@ const EditApplicationForm: React.FC = () => {
   };
 
   const handleDocumentChange = (index: number, value: string, name: string) => {
-    if (!application) return;
-
     setApplication((prev) => {
-      if (!prev) return null;
       const newDocuments = [...prev.documents];
       newDocuments[index] = {
         ...newDocuments[index],
@@ -336,8 +283,6 @@ const EditApplicationForm: React.FC = () => {
     index: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!application) return;
-
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
@@ -347,12 +292,10 @@ const EditApplicationForm: React.FC = () => {
       uploadFile(formData, {
         onSuccess: (data) => {
           setApplication((prev) => {
-            if (!prev) return null;
             const newDocuments = [...prev.documents];
             newDocuments[index] = {
               ...newDocuments[index],
-              documentFileId: data.id,
-              file: file
+              documentFilePath: data.path, // veya data.id
             };
             return {
               ...prev,
@@ -368,105 +311,79 @@ const EditApplicationForm: React.FC = () => {
   };
 
   const addGuardian = () => {
-    if (!application) return;
-
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        guardians: [
-          ...prev.guardians,
-          {
-            relation: 'father',
-            first_name: '',
-            last_name: '',
-            father_name: '',
-            date_of_birth: '',
-            place_of_birth: '',
-            phone: '',
-            address: '',
-            work_place: '',
-          },
-        ],
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      guardians: [
+        ...prev.guardians,
+        {
+          relation: 'father',
+          first_name: '',
+          last_name: '',
+          father_name: '',
+          date_of_birth: '',
+          place_of_birth: '',
+          phone: '',
+          address: '',
+          work_place: '',
+        },
+      ],
+    }));
   };
 
   const addInstitution = () => {
-    if (!application) return;
-
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        institutions: [
-          ...prev.institutions,
-          {
-            name: '',
-            school_gpa: 0,
-            graduated_year: 0,
-          },
-        ],
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      institutions: [
+        ...prev.institutions,
+        {
+          name: '',
+          school_gpa: 0,
+          graduated_year: 0,
+          certificateFilePath: '',
+        },
+      ],
+    }));
   };
 
   const addOlympic = () => {
-    if (!application) return;
-
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        olympics: [
-          ...prev.olympics,
-          {
-            type: 'area',
-            description: '',
-          },
-        ],
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      olympics: [
+        ...prev.olympics,
+        {
+          type: 'area',
+          description: '',
+          olympicFilePath: '',
+        },
+      ],
+    }));
   };
 
   const addDocument = () => {
-    if (!application) return;
-
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        documents: [
-          ...prev.documents,
-          {
-            type: 'school_certificate',
-          },
-        ],
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      documents: [
+        ...prev.documents,
+        {
+          type: 'school_certificate',
+          documentFilePath: '',
+        },
+      ],
+    }));
   };
-
 
   const removeItem = (
     type: 'guardians' | 'institutions' | 'olympics' | 'documents',
     index: number
   ) => {
-    if (!application) return;
-    setApplication((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        [type]: prev[type].filter((_, i) => i !== index),
-      };
-    });
+    setApplication((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!application || !application.id) {
-      console.error("Application data not loaded or ID is missing.");
-      return;
-    }
 
     console.log('Submitting application:', application);
 
@@ -489,27 +406,18 @@ const EditApplicationForm: React.FC = () => {
     };
 
     try {
-      mutation.mutate(
-        { id: application.id, data: formattedApplication },
-        {
-          onSuccess: () => {
-            navigate('/application_list');
-          },
-          onError: (error) => {
-            console.error('Mutation failed:', error);
-          },
-        }
-      );
+      mutation.mutate(formattedApplication, {
+        onSuccess: () => {
+          navigate('/application_list');
+        },
+        onError: (error) => {
+          console.error('Mutation failed:', error);
+        },
+      });
     } catch (error) {
       console.error('Error submitting application:', error);
     }
   };
-
-
-  if (isLoading || !application) {
-    return <div>Loading...</div>;
-  }
-
 
   return (
     <Container>
@@ -528,7 +436,6 @@ const EditApplicationForm: React.FC = () => {
             <div className="flex items-center space-x-5 mb-2">
               <label className="p-3 font-medium w-48">First Name:</label>
               <div className="p-4 w-[400px]">
-                {' '}
                 {/* Set width to 400px */}
                 <Input
                   className="py-2"
@@ -542,7 +449,6 @@ const EditApplicationForm: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="flex items-center space-x-5 mb-2">
               <label className="p-3 font-medium w-48">Last Name:</label>
               <div className="p-4 w-[400px]">
@@ -617,7 +523,6 @@ const EditApplicationForm: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="flex items-center space-x-5 mb-2">
               <label className="p-3 font-medium w-48">Place of Birth:</label>
               <div className="p-4 w-[400px]">
@@ -710,6 +615,8 @@ const EditApplicationForm: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* ... (Diğer kullanıcı bilgisi alanları) ... */}
           </div>
         </div>
 
@@ -725,13 +632,10 @@ const EditApplicationForm: React.FC = () => {
                 <Select
                   value={application.primary_major}
                   onChange={(value) =>
-                    setApplication((prev) => {
-                      if (!prev) return null;
-                      return {
-                        ...prev,
-                        primary_major: Number(value),
-                      };
-                    })
+                    setApplication((prev) => ({
+                      ...prev,
+                      primary_major: Number(value),
+                    }))
                   }
                   style={{ width: '100%', height: '40px' }}
                   placeholder="Select Major"
@@ -761,13 +665,10 @@ const EditApplicationForm: React.FC = () => {
                             : application.admission_major.filter(
                                 (id) => id !== major.id
                               );
-                          setApplication((prev) => {
-                            if (!prev) return null;
-                            return {
-                              ...prev,
-                              admission_major: newMajors,
-                            };
-                          });
+                          setApplication((prev) => ({
+                            ...prev,
+                            admission_major: newMajors,
+                          }));
                         }}
                         className="mr-2"
                       />
@@ -835,6 +736,7 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Last Name:</label>
                   <div className="p-4 w-[400px]">
@@ -903,6 +805,7 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Phone:</label>
                   <div className="p-4 w-[400px]">
@@ -918,6 +821,7 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Address:</label>
                   <div className="p-4 w-[400px]">
@@ -933,6 +837,7 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Work Place:</label>
                   <div className="p-4 w-[400px]">
@@ -952,6 +857,8 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {/* ... (Diğer vasi bilgisi alanları) ... */}
               </div>
             </div>
           ))}
@@ -971,6 +878,7 @@ const EditApplicationForm: React.FC = () => {
               Educational Institutions
             </h3>
           </div>
+          
           {application.institutions.map((institution, index) => (
             <div key={index} className="mb-4 p-4 rounded relative">
               <button
@@ -996,39 +904,43 @@ const EditApplicationForm: React.FC = () => {
                     />
                   </div>
                 </div>
-                <div className="flex items-center space-x-5 mb-2">
-                  <label className="p-3 font-medium w-48">School GPA:</label>
-                  <div className="p-4 w-[400px]">
-                    <Input
-                      className="py-2"
-                      type="number"
-                      name="school_gpa"
-                      value={institution.school_gpa}
-                      onChange={(e) => handleInstitutionChange(index, e)}
-                      placeholder="Enter GPA"
-                      step="0.01"
-                      min="0"
-                      max="5"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-5 mb-2">
-                  <label className="p-3 font-medium w-48">
-                    Graduated Year:
-                  </label>
-                                    <div className="p-4 w-[400px]">
-                    <Input
-                      className="py-2"
-                      type="number"
-                      name="graduated_year"
-                      value={institution.graduated_year}
-                      onChange={(e) => handleInstitutionChange(index, e)}
-                      placeholder="Enter graduation year"
-                      min="1900"
-                      max={new Date().getFullYear()}
-                    />
-                  </div>
-                </div>
+                 <div className="flex items-center space-x-5 mb-2">
+                                  <label className="p-3 font-medium w-48">School GPA:</label>
+                                  <div className="p-4 w-[400px]">
+                                    <Input
+                                      className="py-2"
+                                      type="number"
+                                      name="school_gpa"
+                                      value={institution.school_gpa}
+                                      onChange={(e) => handleInstitutionChange(index, e)}
+                                      placeholder="Enter GPA"
+                                      step="0.01"
+                                      min="0"
+                                      max="5"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center space-x-5 mb-2">
+                                                  <label className="p-3 font-medium w-48">
+                                                    Graduated Year:
+                                                  </label>
+                                                  <div className="p-4 w-[400px]">
+                                                    <Input
+                                                      className="py-2"
+                                                      type="number"
+                                                      name="graduated_year"
+                                                      value={institution.graduated_year}
+                                                      onChange={(e) => handleInstitutionChange(index, e)}
+                                                      placeholder="Enter graduation year"
+                                                      min="1900"
+                                                      max={new Date().getFullYear()}
+                                                    />
+                                                  </div>
+                                                </div>
+                                                
+
+             
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Certificate:</label>
                   <div className="p-4 w-[400px]">
@@ -1037,11 +949,11 @@ const EditApplicationForm: React.FC = () => {
                       name="certificate"
                       onChange={(e) => handleInstitutionFileUpload(index, e)}
                       className="w-full p-2"
-                      disabled={isFileUploadLoading}
+                      disabled={isFileUploadLoading} // Dosya yüklenirken input'u devre dışı bırak
                     />
-                    {institution.certificateFileId && (
+                    {institution.certificateFilePath && (
                       <span className="text-sm text-gray-600">
-                        Uploaded File ID: {institution.certificateFileId}
+                        Uploaded File Path: {institution.certificateFilePath}
                       </span>
                     )}
                     {isFileUploadLoading && <div>File is uploading...</div>}
@@ -1115,15 +1027,16 @@ const EditApplicationForm: React.FC = () => {
                     Certificate File:
                   </label>
                   <div className="p-4 w-[400px]">
-                    <input
+                    <Input
                       type="file"
                       name="file"
                       onChange={(e) => handleOlympicFileUpload(index, e)}
                       className="w-full p-2"
+                      disabled={isFileUploadLoading}
                     />
-                    {olympic.olympicFileId && (
+                    {olympic.olympicFilePath && (
                       <span className="text-sm text-gray-600">
-                        Uploaded File ID: {olympic.olympicFileId}
+                        Uploaded File Path: {olympic.olympicFilePath}
                       </span>
                     )}
                     {isFileUploadLoading && <div>File is uploading...</div>}
@@ -1192,24 +1105,22 @@ const EditApplicationForm: React.FC = () => {
                       <Select.Option value="labor_book">
                         Labor Book
                       </Select.Option>
-                      <Select.Option value="Dushundirish">
-                        Dushundirish
-                      </Select.Option>
                     </Select>
                   </div>
                 </div>
                 <div className="flex items-center space-x-5 mb-2">
                   <label className="p-3 font-medium w-48">Document File:</label>
                   <div className="p-4 w-[400px]">
-                    <input
+                    <Input
                       type="file"
                       name="file"
                       onChange={(e) => handleDocumentFileUpload(index, e)}
                       className="w-full p-2 rounded"
+                      disabled={isFileUploadLoading}
                     />
-                    {document.documentFileId && (
+                    {document.documentFilePath && (
                       <span className="text-sm text-gray-600">
-                        Uploaded File ID: {document.documentFileId}
+                        Uploaded File Path: {document.documentFilePath}
                       </span>
                     )}
                     {isFileUploadLoading && <div>File is uploading...</div>}
@@ -1261,4 +1172,4 @@ const EditApplicationForm: React.FC = () => {
   );
 };
 
-export default EditApplicationForm;
+export default ApplicationForm;

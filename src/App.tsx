@@ -12,6 +12,7 @@ import ExamSubjectsPage from './pages/ExamSubjects/ExamSubjectsList';
 import ApplicationListPage from './pages/ApplicationLIst/ApplicationLIstPage';
 import AddApplicationPage from './pages/ApplicationLIst/AddApplicationList';
 import Dashboard from './pages/Dashboard/Dashboard';
+import EditApplicationForm from './pages/ApplicationLIst/EditApplicationList';
 
 const App: React.FC = () => {
   return (
@@ -41,6 +42,8 @@ const App: React.FC = () => {
                 path="/application_list/add"
                 element={<AddApplicationPage />}
               />
+
+              <Route path="/application_list/edit/:id" element={<EditApplicationForm/>} /> 
 
               <Route path="/statistics" element={<Dashboard />} />
             </Route>

@@ -1,4 +1,12 @@
-const exams = [
+
+
+interface Exam {
+  name: string;
+  result: string;
+  percentage: string;
+}
+
+const exams: Exam[] = [
   { name: "Exam 1", result: "123/1234", percentage: "15%" },
   { name: "Exam 2", result: "123/1234", percentage: "15%" },
   { name: "Exam 3", result: "123/1234", percentage: "15%" },
@@ -8,7 +16,7 @@ const ExamResults = () => {
   return (
     <div className="bg-white rounded-xl shadow p-4 w-[500px] h-[260px]">
       <h3 className="text-lg font-semibold mb-4">Exam Results (Passed)</h3>
-      
+
       {/* Region filters */}
       <div className="flex items-center gap-3 text-sm mb-4 text-gray-600">
         {["All", "Lebap", "Mary", "Balkan", "Ahal", "Dasoguz"].map((region) => (

@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../api";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../api';
 
 export interface Guardian {
   relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
@@ -11,7 +11,7 @@ export interface Guardian {
   phone: string;
   address: string;
   work_place: string;
-  documents: number[];
+  documents?: number[]; // backend files: [0]
 }
 
 export interface Institution {
@@ -19,14 +19,14 @@ export interface Institution {
   name: string;
   school_gpa: number;
   graduated_year: number;
-  certificates: number[];  
+  certificates?: number[]; // backend certificates: [0]
 }
 
 export interface Olympic {
   application?: number;
   type: 'area' | 'region' | 'state' | 'international' | 'other';
   description: string;
-  files: number[];
+  files?: number[]; // backend files: [0]
 }
 
 export interface Document {
@@ -41,8 +41,8 @@ export interface Document {
     | 'description'
     | 'terjiimehal'
     | 'labor_book'
-    | 'Dushundirish';  // API örneğinde vardı, ekledim
-  files: number[];
+    | 'Dushundirish'; // <- Ekledik çünkü JSON’da bu şekilde geliyor
+  files?: number[]; // backend files: [0]
 }
 
 export interface ApplicationUser {
@@ -53,7 +53,7 @@ export interface ApplicationUser {
   area: number;
   gender: 'male' | 'female';
   nationality: string;
-  date_of_birth : string;
+  date_of_birth: string;
   address: string;
   place_of_birth: string;
   home_phone: string;
@@ -71,12 +71,20 @@ export interface IApplication {
   documents: Document[];
 }
 
-export const useAddApplication = () => {
+
+export const useEditApplication = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newApplication: IApplication) => {
-      return await api.post('/admission/application/', newApplication);
+   
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: IApplication;
+    }) => {
+      return await api.put(`/admission/application/${id}/`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application'] });

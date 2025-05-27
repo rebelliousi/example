@@ -57,12 +57,12 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       </div>
 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
-        <button
+        <Link to={`/application_list/edit/${application.id}`}
           
           onClick={(e) => e.stopPropagation()}
         >
           <PencilIcon size={16} />
-        </button>
+        </Link>
 
         <button
           onClick={(e) => {
