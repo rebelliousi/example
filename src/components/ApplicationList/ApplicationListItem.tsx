@@ -1,5 +1,5 @@
 import { FC, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useModalStore } from '../../store/modal';
 
 import PencilIcon from '../../assets/icons/PencilIcon';
@@ -13,10 +13,9 @@ interface ApplicationListItemProps {
 }
 
 const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index }) => {
-
   const { mutate } = useDeleteApplicationById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
-  const { admission_id } = useParams<{ admission_id: string }>();
+  const navigate = useNavigate();
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -32,10 +31,17 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
     setOpen(true);
   }, [application, setOpen, setOnSubmit, mutate, setStatus]);
 
+  const handleRowClick = useCallback(() => {
+    navigate(`/application_list/detail/${application.id}`); // Or whatever the correct detail page route is
+  }, [application, navigate]);
+
   return (
-    <div className="py-2 group grid cursor-pointer items-center border-t grid-cols-12 hover:bg-listItemHover px-3 text-tableTopText">
+    <div
+      className="py-2 group grid cursor-pointer items-center border-t grid-cols-12 hover:bg-listItemHover px-3 text-tableTopText"
+      onClick={handleRowClick}
+    >
       <div>
-        <h1>{index + 0}</h1>
+        <h1>{index + 1}</h1>
       </div>
 
       <div className="col-span-3">
@@ -57,8 +63,8 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       </div>
 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
-        <Link to={`/application_list/edit/${application.id}`}
-          
+        <Link
+          to={`/application_list/edit/${application.id}`}
           onClick={(e) => e.stopPropagation()}
         >
           <PencilIcon size={16} />

@@ -19,6 +19,7 @@ import { LinkButton } from '../../components/Buttons/LinkButton';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
 import { useEditApplication } from '../../hooks/ApplicationList/useEditApplication';
+import LoadingIndicator from '../../components/Status/LoadingIndicator';
 
 interface InstitutionWithFiles extends Omit<Institution, 'certificates'> {
     certificates: number[]; // Changed to number array as expected by API
@@ -570,7 +571,7 @@ const EditApplicationForm: React.FC = () => {
     };
 
     if (isLoading || !application) {
-        return <div>Loading...</div>;
+        return <div><LoadingIndicator/></div>;
     }
 
     return (

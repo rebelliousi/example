@@ -13,6 +13,7 @@ import ApplicationListPage from './pages/ApplicationLIst/ApplicationLIstPage';
 import AddApplicationPage from './pages/ApplicationLIst/AddApplicationList';
 import Dashboard from './pages/Dashboard/Dashboard';
 import EditApplicationForm from './pages/ApplicationLIst/EditApplicationList';
+import ApplicationDetailPage from './pages/ApplicationLIst/ApplicationDetailPage';
 
 const App: React.FC = () => {
   return (
@@ -37,6 +38,11 @@ const App: React.FC = () => {
               <Route
                 path="/application_list"
                 element={<ApplicationListPage />}
+              />
+
+              <Route
+                path="/application_list/detail/:id"
+                element={<ApplicationDetailPage />}
               />
               <Route
                 path="/application_list/add"
