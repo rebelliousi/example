@@ -41,7 +41,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       onClick={handleRowClick}
     >
       <div>
-        <h1>{index + 1}</h1>
+        <h1>{index + 0}</h1>
       </div>
 
       <div className="col-span-3">

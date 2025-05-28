@@ -3,7 +3,7 @@ import ExampleIcon from "../../assets/icons/ExampleIcon";
 
 interface OnlineApplicationsProps {
   applicationStatus: { status: "PENDING" | "APPROVED" | "REJECTED"; count: number; }[];
-  applicationsByRegion: { user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary"; count: number; }[];
+  applicationsByRegion: { user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary" | null; count: number; }[];
 }
 
 const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStatus, applicationsByRegion }) => {

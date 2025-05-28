@@ -13,15 +13,23 @@ export interface GenderStat {
   count: number;
   percentage: number;
 }
+
 export interface ApplicationStatus {
   status: "PENDING" | "APPROVED" | "REJECTED";
   count: number;
 }
 
 export interface RegionApplication {
-  user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary";
+  user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary" | null; // null eklendi
   count: number;
 }
+
+export interface MajorGenderStat { // Major'e özgü cinsiyet istatistiği için yeni interface
+    user__gender: 'male' | 'female';
+    count: number;
+    percentage: number;
+}
+
 
 export interface Major {
   id: number;
@@ -31,15 +39,16 @@ export interface Major {
   application_count: number;
   fill_percentage: number;
   regions: Record<string, number>;
+  gender?: MajorGenderStat[]; // MajorGenderStat kullanıldı ve opsiyonel olarak işaretlendi
 }
 
 export interface MilitaryStatus {
-  military_service: 'female' | 'served' |'not_served';
+  military_service: 'female' | 'served' | 'not_served' | ''; // '' eklendi
   count: number;
 }
 
 export interface Degree {
-  degree: 'bachelor' | 'master';
+  degree: 'bachelor' | 'master' | ''; // '' eklendi
   count: number;
 }
 
@@ -59,7 +68,6 @@ export interface AdmissionStatistics {
   degrees: Degree[];
   special_cases: SpecialCases;
 }
-
 
 const getStatistics = async (): Promise<AdmissionStatistics> => {
   const response = await api.get(`/admission/statistics/`);

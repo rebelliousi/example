@@ -9,13 +9,15 @@ import {
     Olympic,
 } from '../../hooks/ApplicationList/useAddApplicationList';
 
-import 'antd';
+import { Button, Typography, Space } from 'antd';
 import moment from 'moment';
 import Container from '../../components/Container/Container'
 
 import { useParams } from 'react-router-dom';
 import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
+
+const { Text } = Typography;
 
 interface InstitutionWithFiles extends Omit<Institution, 'certificates'> {
     certificates: number[];
@@ -126,6 +128,46 @@ const ApplicationDetails: React.FC = () => {
         if (!dateString) return null;
         return moment(dateString, 'DD.MM.YYYY');
     };
+
+    const getFileExtension = (filename: string): string => {
+        return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+    };
+
+    const getFileIcon = (filename: string): string => {
+        const extension = getFileExtension(filename).toLowerCase();
+        switch (extension) {
+            case 'pdf': return '📄';
+            case 'doc': case 'docx': return 'Word';
+            case 'xls': case 'xlsx': return 'Excel';
+            case 'jpg': case 'jpeg': case 'png': case 'gif': return '🖼️';
+            default: return '';
+        }
+    };
+
+   const downloadFile = (url: string, filename: string) => {
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/octet-stream',
+        },
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url); // Clean up memory
+    })
+    .catch(error => {
+        console.error('Download error:', error);
+        //  Use Ant Design's message component for a better user experience
+        // message.error('Failed to download file.');
+    });
+};
 
     if (isLoading || !application) {
         return <div><LoadingIndicator /></div>;
@@ -328,7 +370,30 @@ const ApplicationDetails: React.FC = () => {
                                         {guardian.work_place}
                                     </div>
                                 </div>
-
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Guardian Documents:</label>
+                                    <div className="p-4 w-[400px]">
+                                        {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 ? (
+                                            <ul>
+                                                {guardian.documentFilePaths.map((path, idx) => (
+                                                    <li key={idx}>
+                                                        <Space direction="horizontal" align="center">
+                                                            <Text>{getFileIcon(path)}</Text>
+                                                            <Button type="primary" size="small" onClick={(e) => {
+                                                                e.preventDefault();
+                                                                downloadFile(path, path.substring(path.lastIndexOf('/') + 1));
+                                                            }}>
+                                                                Download File
+                                                            </Button>
+                                                        </Space>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div>No documents uploaded.</div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -370,6 +435,30 @@ const ApplicationDetails: React.FC = () => {
                                         {institution.graduated_year}
                                     </div>
                                 </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Certificates:</label>
+                                    <div className="p-4 w-[400px]">
+                                        {institution.certificateFilePaths && institution.certificateFilePaths.length > 0 ? (
+                                            <ul>
+                                                {institution.certificateFilePaths.map((path, idx) => (
+                                                    <li key={idx}>
+                                                        <Space direction="horizontal" align="center">
+                                                            <Text>{getFileIcon(path)}</Text>
+                                                            <Button type="primary" size="small" onClick={(e) => {
+                                                                e.preventDefault();
+                                                                downloadFile(path, path.substring(path.lastIndexOf('/') + 1));
+                                                            }}>
+                                                                Download Certificate
+                                                            </Button>
+                                                        </Space>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div>No certificates uploaded.</div>
+                                        )}
+                                    </div>
+                                </div>
 
 
                             </div>
@@ -401,15 +490,78 @@ const ApplicationDetails: React.FC = () => {
                                         {olympic.description}
                                     </div>
                                 </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Olympic Files:</label>
+                                    <div className="p-4 w-[400px]">
+                                        {olympic.olympicFilePaths && olympic.olympicFilePaths.length > 0 ? (
+                                            <ul>
+                                                {olympic.olympicFilePaths.map((path, idx) => (
+                                                    <li key={idx}>
+                                                        <Space direction="horizontal" align="center">
+                                                            <Text>{getFileIcon(path)}</Text>
+                                                            <Button type="primary" size="small" onClick={(e) => {
+                                                                e.preventDefault();
+                                                                downloadFile(path, path.substring(path.lastIndexOf('/') + 1));
+                                                            }}>
+                                                                Download File
+                                                            </Button>
+                                                        </Space>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div>No files uploaded.</div>
+                                        )}
+                                    </div>
+                                </div>
 
                             </div>
                         </div>
                     ))}
 
                 </div>
-
-
-
+                {/* Documents */}
+                <div className="w-full mb-40">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
+                    </div>
+                    {application?.documents?.map((document, index) => (
+                        <div key={index} className="mb-4 p-4 rounded relative">
+                            <div className="flex flex-col">
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Document Type:</label>
+                                    <div className="p-4 w-[400px]">
+                                        {document.type}
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Documents Files:</label>
+                                    <div className="p-4 w-[400px]">
+                                        {document.documentFilePaths && document.documentFilePaths.length > 0 ? (
+                                            <ul>
+                                                {document.documentFilePaths.map((path, idx) => (
+                                                    <li key={idx}>
+                                                        <Space direction="horizontal" align="center">
+                                                            <Text>{getFileIcon(path)}</Text>
+                                                            <Button type="primary" size="small" onClick={(e) => {
+                                                                e.preventDefault();
+                                                                downloadFile(path, path.substring(path.lastIndexOf('/') + 1));
+                                                            }}>
+                                                                Download File
+                                                            </Button>
+                                                        </Space>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div>No files uploaded.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </Container>
     );

@@ -31,11 +31,11 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
     totals.balkan += major.regions.balkan || 0;
 
     // Sum girls and boys using gender stats from the major object
-    // const totalGirls = major.gender_stats?.find((stat) => stat.user__gender === "female")?.count || 0;
-    // const totalBoys = major.gender_stats?.find((stat) => stat.user__gender === "male")?.count || 0;
+    const totalGirls = major.gender?.find((stat) => stat.user__gender === "female")?.count || 0;
+    const totalBoys = major.gender?.find((stat) => stat.user__gender === "male")?.count || 0;
 
-    // totals.girls += totalGirls;
-    // totals.boys += totalBoys;
+    totals.girls += totalGirls;
+    totals.boys += totalBoys;
   });
 
   return (
@@ -89,6 +89,9 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
             </thead>
             <tbody>
               {majors.map((item, i) => {
+                //Sum girls and boys using gender stats from the major object
+                const totalGirls = item.gender?.find((stat) => stat.user__gender === "female")?.count || 0;
+                const totalBoys = item.gender?.find((stat) => stat.user__gender === "male")?.count || 0;
                 return (
                   <tr key={item.id} className="border-b text-[#2A3547]">
                     <td className="px-4 py-2">{i + 1}</td>
@@ -102,10 +105,10 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
                     <td className="px-4 py-2">{item.regions.lebap}</td>
                     <td className="px-4 py-2">{item.regions.balkan}</td>
                     <td className="px-4 py-2">
-                      {/* {item.gender_stats?.find((stat) => stat.user__gender === "female")?.count || 0} */}
+                      {totalGirls}
                     </td>
                     <td className="px-4 py-2">
-                      {/* {item.gender_stats?.find((stat) => stat.user__gender === "male")?.count || 0} */}
+                     {totalBoys}
                     </td>
                   </tr>
                 );
