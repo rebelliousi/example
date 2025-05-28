@@ -1,45 +1,91 @@
-import React from "react";
+import React, { useState } from "react";
 import ExampleIcon from "../../assets/icons/ExampleIcon";
 
-const OnlineApplications = () => {
-  // Placeholder data for demonstration
-  const totalApplicants = 500;
-  const verified = 375;
-  const waiting = 125;
+interface OnlineApplicationsProps {
+  applicationStatus: { status: "PENDING" | "APPROVED" | "REJECTED"; count: number; }[];
+  applicationsByRegion: { user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary"; count: number; }[];
+}
 
-  const verifiedPercentage = ((verified / totalApplicants) * 100).toFixed(2);
-  const waitingPercentage = ((waiting / totalApplicants) * 100).toFixed(2);
+const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStatus, applicationsByRegion }) => {
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+
+  // Filtrelenmiş başvurular
+  const filteredApplicationsByRegion = selectedRegion
+    ? applicationsByRegion?.filter(
+        (region) => region.user__area__region === selectedRegion
+      )
+    : applicationsByRegion;
+
+    //Toplam Başvuru Sayısı (Filtrelenmiş veya Tüm)
+    const totalApplicantsForRegion = filteredApplicationsByRegion?.reduce((sum, region) => sum + region.count, 0) || 0;
+
+    // Duruma Göre Başvuruları Filtreleme
+    const verified = applicationStatus?.find(status => status.status === "APPROVED")?.count || 0;
+    const waiting = applicationStatus?.find(status => status.status === "PENDING")?.count || 0;
+
+  const verifiedPercentage = totalApplicantsForRegion ? ((verified / totalApplicantsForRegion) * 100).toFixed(2) : "0.00";
+  const waitingPercentage = totalApplicantsForRegion ? ((waiting / totalApplicantsForRegion) * 100).toFixed(2) : "0.00";
 
   return (
     <div className="bg-white rounded-xl shadow p-5 w-full h-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-2">
-            <ExampleIcon/>
-            <h3 className="text-md font-semibold">
-           Online applications</h3>
-
-          </div>
         <div className="flex items-center space-x-2">
-            <ExampleIcon/>
-            <span className="text-sm text-gray-400">19.04.2025</span>
-          </div>
+          <ExampleIcon />
+          <h3 className="text-md font-semibold">
+            Online applications
+          </h3>
+        </div>
+        <div className="flex items-center space-x-2">
+          <ExampleIcon />
+          <span className="text-sm text-gray-400">19.04.2025</span>
+        </div>
       </div>
 
       {/* Region Filters */}
       <div className="flex items-center gap-4 text-sm mb-4 text-gray-600 flex-wrap">
-        <span className="font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">All</span>
-        <span>Lebap</span>
-        <span>Mary</span>
-        <span>Balkan</span>
-        <span>Ahal</span>
-        <span>Dasoguz</span>
+        <button
+          className={`font-medium px-2 py-1 rounded ${selectedRegion === null ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion(null)}
+        >
+          All
+        </button>
+        <button
+          className={`px-2 py-1 rounded ${selectedRegion === "lebap" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion("lebap")}
+        >
+          Lebap
+        </button>
+        <button
+          className={`px-2 py-1 rounded ${selectedRegion === "mary" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion("mary")}
+        >
+          Mary
+        </button>
+        <button
+          className={`px-2 py-1 rounded ${selectedRegion === "balkan" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion("balkan")}
+        >
+          Balkan
+        </button>
+        <button
+          className={`px-2 py-1 rounded ${selectedRegion === "ahal" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion("ahal")}
+        >
+          Ahal
+        </button>
+        <button
+          className={`px-2 py-1 rounded ${selectedRegion === "dashoguz" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+          onClick={() => setSelectedRegion("dashoguz")}
+        >
+          Dasoguz
+        </button>
       </div>
 
       {/* Statistic Box */}
       <div className="grid grid-cols-12 gap-2 mt-10">
         <div className="col-span-5 flex items-center gap-4 bg-blue-50 py-3 px-3 rounded">
-          <h1 className="text-5xl font-bold text-blue-600">{totalApplicants}</h1>
+          <h1 className="text-5xl font-bold text-blue-600">{totalApplicantsForRegion}</h1>
           <span className="text-sm text-gray-500">
             Total <br /> applicants
           </span>

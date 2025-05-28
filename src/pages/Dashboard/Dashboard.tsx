@@ -1,3 +1,4 @@
+
 import ApplicationsByDate from '../../components/Dashboard/ApplicationsByDate';
 import ExamResults from '../../components/Dashboard/ExamResults';
 import { useStatistics } from '../../hooks/Statistics/useStatistics';
@@ -42,7 +43,6 @@ const Dashboard = () => {
       <div className="grid grid-cols-12 gap-5">
         <div className="col-span-5">
           <ApplicationsByDate
-            totalApplications={statistics.total_applications}
             genderStats={statistics.gender_stats}
             applicationsByRegion={statistics.applications_by_region}
           />
@@ -55,11 +55,14 @@ const Dashboard = () => {
         </div>
 
      <div className="col-span-5  mt-[-35px]">
-          <OnlineApplications />
+        <OnlineApplications
+          applicationStatus={statistics.application_status}
+          applicationsByRegion={statistics.applications_by_region}
+        />
         </div>
-        <div className="col-span-4  mt-[-70px]">
-          <SpecialGroups />
-        </div> 
+        <div className="col-span-3  mt-[-110px]">
+          <SpecialGroups vipCount={statistics.special_cases?.vip_count || 0} orphanCount={statistics.special_cases?.orphan_count || 0} />
+        </div>
 
         <div className="col-span-1"></div>
       </div>
