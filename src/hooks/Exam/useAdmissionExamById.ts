@@ -21,7 +21,7 @@ const getAdmissionExamById = async (id: string | undefined): Promise<AdmissionDa
   return response.data;
 };
 
-// React Query Hook
+
 export function useAdmissionExamById(id: string | undefined) {
   return useQuery<AdmissionData>({
     queryKey: ['admission_exams', id],

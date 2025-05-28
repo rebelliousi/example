@@ -17,7 +17,7 @@ const ExamSubjectsPage = () => {
   const closeAddModal = () => setIsModalOpen(false); 
 
 
-  const { data: examSubjects, isSuccess, isLoading } = useExamSubjects(page);  // Use the custom hook
+  const { data: examSubjects, isSuccess, isLoading } = useExamSubjects(page);  
 
   const totalPages = examSubjects ? Math.ceil(examSubjects.count / 20) : 0;
 
@@ -50,13 +50,13 @@ const ExamSubjectsPage = () => {
                 <div className="col-span-3">
                   <h1>Name</h1>
                 </div>
-                {/* Add more columns as needed for ExamSubject data */}
-                <div className="col-span-4"> {/* Placeholder for actions/details */} </div>
+              
+                <div className="col-span-4">  </div>
               </div>
 
               {isSuccess &&
                 examSubjects?.results?.map((examSubject, index) => (
-                  <ExamSUbjectsListItem // Use the new component
+                  <ExamSUbjectsListItem 
                     key={examSubject.id}
                     examSubjects={examSubject}
                     index={index}

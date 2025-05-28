@@ -13,30 +13,29 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
 }) => {
     const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
-    // Filtrelenmiş başvurular
+  
     const filteredApplicationsByRegion = applicationsByRegion?.filter(
         (region) => selectedRegion === null || region.user__area__region === selectedRegion
     );
 
-    // Toplam başvuru sayısı (bölgeye göre filtrelenmiş)
+
     const totalApplicationsForRegion = filteredApplicationsByRegion?.reduce((sum, region) => sum + region.count, 0) || 0;
 
-    // Toplam cinsiyet sayısı
+
     const totalGirlsAllRegions = genderStats?.find(stat => stat.user__gender === "female")?.count || 0;
     const totalBoysAllRegions = genderStats?.find(stat => stat.user__gender === "male")?.count || 0;
     const totalAllRegions = totalGirlsAllRegions + totalBoysAllRegions;
 
-    //Oranları hesapla
     const girlsPercentageAllRegions = totalAllRegions ? (totalGirlsAllRegions / totalAllRegions) * 100 : 0;
     const boysPercentageAllRegions = totalAllRegions ? (totalBoysAllRegions / totalAllRegions) * 100 : 0;
 
-    //Bölgeye Göre Tahmini Cinsiyet Sayıları
+ 
     const estimatedRegionGirls = totalApplicationsForRegion * (girlsPercentageAllRegions / 100);
     const estimatedRegionBoys = totalApplicationsForRegion * (boysPercentageAllRegions / 100);
 
     return (
         <div className="bg-white rounded-xl shadow p-5 w-full h-auto">
-            {/* Header */}
+       
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center space-x-2">
                     <ExampleIcon />
@@ -48,7 +47,6 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
                 </div>
             </div>
 
-            {/* Region Filters */}
             <div className="flex items-center gap-4 text-sm mb-4 text-gray-600 flex-wrap">
                 <button
                     className={`font-medium px-2 py-1 rounded ${selectedRegion === null ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
@@ -88,7 +86,7 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
                 </button>
             </div>
 
-            {/* Statistic Box */}
+    
             <div className="grid grid-cols-12 gap-2 mt-10">
                 <div className="col-span-5 flex items-center gap-4 bg-blue-50 py-3 px-3 rounded">
                     <h1 className="text-5xl font-bold text-blue-600">{totalApplicationsForRegion}</h1>
@@ -98,7 +96,7 @@ const ApplicationsByDate: React.FC<ApplicationsByDateProps> = ({
                     </span>
                 </div>
 
-                {/* Gender Info */}
+           
                 <div className="col-span-7 pl-2 flex items-center gap-6 text-sm">
                     <div className="border-r pr-4 flex flex-col items-start">
                         <h1 className="text-md text-[#7C8FAC]"> Girls: </h1>

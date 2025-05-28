@@ -31,7 +31,7 @@ const ExamDetailPage = () => {
   const { data: examData } = useMajorById(major_id);
 
   const {
-    data: subjectsData,
+
     error: errorSubjects,
   } = useAdmissionSubjects(1);
 
@@ -105,7 +105,7 @@ const ExamDetailPage = () => {
               Major
             </label>
             <div
-              className="w-96 h-auto rounded  text-gray-600 bg-white p-2 border border-gray-300" // Added border here
+              className="w-96 h-auto rounded  text-gray-600 bg-white p-2 border border-gray-300" 
               style={{ border: '1px solid #ccc' }}
             >
               {majorData?.results.find((m) => m.id === selectedMajorId)?.major ||
@@ -152,7 +152,7 @@ const ExamDetailPage = () => {
                         {regionData.name}
                       </td>
                       {Array.from({ length: numSubjectColumns }).map(
-                        (subject, subjectColumnIndex) => {
+                        (_, subjectColumnIndex) => {
                           const date =
                             regionFormState?.dates[subjectColumnIndex];
                           return (

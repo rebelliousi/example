@@ -26,7 +26,7 @@ export interface Olympic {
   application?: number;
   type: 'area' | 'region' | 'state' | 'international' | 'other';
   description: string;
-  files?: number[]; // backend files: [0]
+  files?: number[]; 
 }
 
 export interface Document {
@@ -41,8 +41,8 @@ export interface Document {
     | 'description'
     | 'terjiimehal'
     | 'labor_book'
-    | 'Dushundirish'; // <- Ekledik çünkü JSON’da bu şekilde geliyor
-  files?: number[]; // backend files: [0]
+    | 'Dushundirish'; 
+  files?: number[]; 
 }
 
 export interface ApplicationUser {

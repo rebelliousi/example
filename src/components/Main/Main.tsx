@@ -8,9 +8,9 @@ const Main:React.FC<MainProps>=({children})=>{
 
    
     return(
-        <div className="flex-1"> {/**hemme galan bosh yerleri almasy uchin */}
+        <div className="flex-1"> 
          <Navbar/>
-         {children}   {/**main ichine salnan hemme zatlar diymek children  */}
+         {children} 
         </div>
     )
 }

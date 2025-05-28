@@ -6,7 +6,7 @@ import GenderInfo from '../../components/Dashboard/GenderInformation';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 import SpecialGroups from '../../components/Dashboard/SpecialGroups';
 import OnlineApplications from '../../components/Dashboard/OnlineApplications';
-import React from 'react';
+
 
 const Dashboard = () => {
   const { data: statistics, isLoading, isError, error } = useStatistics();

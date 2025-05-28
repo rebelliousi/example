@@ -160,12 +160,11 @@ const ApplicationDetails: React.FC = () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.URL.revokeObjectURL(url); // Clean up memory
+        window.URL.revokeObjectURL(url); 
     })
     .catch(error => {
         console.error('Download error:', error);
-        //  Use Ant Design's message component for a better user experience
-        // message.error('Failed to download file.');
+    
     });
 };
 
@@ -181,7 +180,7 @@ const ApplicationDetails: React.FC = () => {
                         Personal Information
                     </h3>
                     <div className="flex flex-col">
-                        {/* Personal Information Details */}
+                       
                         <div className="flex items-center space-x-5 mb-2">
                             <label className="p-3 font-medium w-48">First Name:</label>
                             <div className="p-4 w-[400px]">

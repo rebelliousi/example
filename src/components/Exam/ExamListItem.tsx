@@ -39,7 +39,7 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ major, index })
         }
     };
 
-    // Tüm subject isimlerini al (hataları önle)
+
     const allSubjects = major.exams
         ?.flatMap((exam) => exam.subject ?? [])
         .map((subject) => subject.name);
@@ -67,7 +67,7 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ major, index })
 
             <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
                 <Link
-                    to={`/admissions/${admission_id}/exams/major/${major.id}/edit`} // Modified path
+                    to={`/admissions/${admission_id}/exams/major/${major.id}/edit`} 
                     onClick={(e) => e.stopPropagation()}
                     className="hover:bg-actionButtonHover rounded-full"
                 >

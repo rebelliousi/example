@@ -1,4 +1,4 @@
-// src/layouts/AdmissionLayout.tsx
+
 
 import { Outlet, NavLink, useParams } from 'react-router-dom';
 import { useAdmissionById } from '../../hooks/Admission/useAdmissonById';

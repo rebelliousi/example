@@ -7,8 +7,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   type?: string;
   id?: string;
   className?: string;
-  register: UseFormRegister<FieldValues>; // Bu kısmı değiştirmeyin, çünkü register genel bir fonksiyondur.
-  validation?: RegisterOptions<FieldValues>; // Burada FieldValues tipini kullanıyoruz.
+  register: UseFormRegister<FieldValues>; 
+  validation?: RegisterOptions<FieldValues>; 
   error?: FieldError | undefined;
 }
 

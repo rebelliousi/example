@@ -29,19 +29,19 @@ const formatDate = (date: Dayjs | null): string => {
 };
 
 const AddAdmissionExamPage = () => {
-  const { admission_id } = useParams<{ admission_id: string }>(); // Ensure admission_id is a string
+  const { admission_id } = useParams<{ admission_id: string }>(); 
   const navigate = useNavigate();
 
   const {
     data: majorData,
     isLoading: isLoadingMajor,
     error: errorMajor,
-  } = useAdmissionMajor(1); // TODO: Fix hardcoded page number
+  } = useAdmissionMajor(1); 
   const {
     data: subjectsData,
     isLoading: isLoadingSubjects,
     error: errorSubjects,
-  } = useAdmissionSubjects(1); // TODO: Fix hardcoded page number
+  } = useAdmissionSubjects(1); 
 
   const {
     mutateAsync,
@@ -69,7 +69,7 @@ const AddAdmissionExamPage = () => {
   ];
 
   useEffect(() => {
-    // Initialize or update examDatesFormState when numSubjectColumns changes
+ 
     const newExamDatesFormState = regions.map((region) => ({
         region: region.value,
         dates: Array(numSubjectColumns).fill(null),
@@ -77,7 +77,6 @@ const AddAdmissionExamPage = () => {
     setExamDatesFormState(newExamDatesFormState);
 
 
-    // Initialize or update selectedSubjectIdsPerColumn when numSubjectColumns changes
     setSelectedSubjectIdsPerColumn((prev) => {
         const newSelectedSubjects = [...prev];
         if (newSelectedSubjects.length < numSubjectColumns) {
@@ -137,7 +136,7 @@ const AddAdmissionExamPage = () => {
         const subjectId = selectedSubjectIdsPerColumn[i];
 
         if (!subjectId || subjectId === 0) {
-            continue; // Skip if no subject is selected
+            continue; 
         }
 
         const examDates: ExamDate[] = [];
@@ -157,7 +156,7 @@ const AddAdmissionExamPage = () => {
         if (examDates.length > 0) {
           payloadsToSend.push({
             admission_major: selectedMajorId,
-            subject: [subjectId], // Wrap subjectId in an array
+            subject: [subjectId],
             exam_dates: examDates,
           });
         }

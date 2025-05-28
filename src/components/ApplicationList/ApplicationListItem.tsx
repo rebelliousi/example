@@ -20,7 +20,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
       try {
-        await mutate(application.id); //id need here
+        await mutate(application.id); 
         setStatus('waiting');
         setOpen(false);
       } catch (err) {
@@ -32,7 +32,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   }, [application, setOpen, setOnSubmit, mutate, setStatus]);
 
   const handleRowClick = useCallback(() => {
-    navigate(`/application_list/detail/${application.id}`); // Or whatever the correct detail page route is
+    navigate(`/application_list/detail/${application.id}`); 
   }, [application, navigate]);
 
   return (

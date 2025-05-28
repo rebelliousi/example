@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Select from '../../components/InputSelect/Select';
 import { LinkButton } from '../../components/Buttons/LinkButton';
 import { useEditAdmissionPlaceById } from '../../hooks/AdmissionPlace/useEditAdmissionPlace';
-import { useAdmissionPlaceById } from '../../hooks/AdmissionPlace/useAdmissionPlaceById'; // Hook'u import ettik
+import { useAdmissionPlaceById } from '../../hooks/AdmissionPlace/useAdmissionPlaceById'; 
 
 
 type Place = {
@@ -25,7 +25,7 @@ const EditAdmissionPlacesPage = () => {
 
   const { mutateAsync, isPending } = useEditAdmissionPlaceById();
   const queryClient = useQueryClient();
-  const { data: admissionPlace } = useAdmissionPlaceById(place_id); // Hook'u kullandık
+  const { data: admissionPlace } = useAdmissionPlaceById(place_id); 
 
   const [place, setPlace] = useState<Place>({
  
@@ -42,7 +42,7 @@ const EditAdmissionPlacesPage = () => {
         address: admissionPlace.address || '',
       });
     }
-  }, [admissionPlace]); // admissionPlace değiştiğinde useEffect çalışacak
+  }, [admissionPlace]); 
 
   const handleChange = (field: keyof Place, value: number | string) => {
     setPlace((prev) => ({

@@ -133,7 +133,7 @@ const EditApplicationForm: React.FC = () => {
                     documentFilePaths: doc.files.map(file => file.path)
                 })) || [],
             };
-             // Mevcut admission_major değerlerini initialApplicationState'e aktar
+          
             if (applicationData.admission_major && applicationData.admission_major.length === 3) {
                 initialApplicationState.admission_major = [...applicationData.admission_major];
             }
@@ -532,7 +532,7 @@ const EditApplicationForm: React.FC = () => {
         e.preventDefault();
         if (!application || !id) return;
 
-        // Required alanlar kontrolü
+   
         if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
             message.error('Lütfen zorunlu alanları doldurun.');
             return;
@@ -546,14 +546,14 @@ const EditApplicationForm: React.FC = () => {
             date_of_birth: application.user.date_of_birth
                 ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
                 : '',
-            // username: applicationData?.user.username || application.user.username, // Mevcut kullanıcı adını koru
-            area: application.user.area !== null ? application.user.area : 0,  // area dönüşümü
-            gender: application.user.gender === 'male' ? 'male' : 'female', // gender dönüşümü
+            
+            area: application.user.area !== null ? application.user.area : 0, 
+            gender: application.user.gender === 'male' ? 'male' : 'female', 
         },
             guardians: application.guardians.map((guardian) => ({
                 ...guardian,
                 date_of_birth: guardian.date_of_birth
-                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY') // Giriş ve çıkış formatlarını belirtin
+                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
                     : '',
                 documentFilePaths: undefined,
                 relation: guardian.relation
@@ -590,7 +590,7 @@ const EditApplicationForm: React.FC = () => {
 
       const uploadProps = {
         name: 'file',
-        multiple: false, // tek dosya yüklemesi için
+        multiple: false,
         beforeUpload: () => false,
         listType: "picture-card" as UploadListType,
     };
@@ -827,7 +827,7 @@ const EditApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Majors */}
+         
                 <div className="w-full mb-40">
                     <h3 className="text-md text-[#4570EA] font-semibold mb-2">
                         Major Selection
@@ -856,7 +856,6 @@ const EditApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Admission Majors - Using Three Select Components */}
                         {[0, 1, 2].map((index) => (
                             <div className="flex items-center space-x-5 mb-2" key={index}>
                                 <label className="p-3 font-medium w-48">Admission Major {index + 1}:</label>
@@ -867,7 +866,7 @@ const EditApplicationForm: React.FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                         placeholder={`Select Admission Major ${index + 1}`}
                                     >
-                                        <Select.Option value={null}>None</Select.Option> {/* Allow selecting no major */}
+                                        <Select.Option value={null}>None</Select.Option>
                                         {majors?.results.map((major) => (
                                             <Select.Option key={major.id} value={major.id}>
                                                 {major.major}
@@ -880,7 +879,7 @@ const EditApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Guardians */}
+       
                 <div className="mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Guardians</h3>
@@ -1096,7 +1095,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Institutions */}
+           
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1200,7 +1199,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Olympics */}
+      
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1294,7 +1293,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Documents */}
+        
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>

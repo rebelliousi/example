@@ -18,17 +18,15 @@ type Place = {
 };
 
 const AddAdmissionPlacesPage = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const { admission_id } = useParams();
-  console.log(admission_id)
+  console.log(admission_id);
   const { data: areas } = useArea();
 
   const { mutateAsync, isPending } = useAddAdmissionPlaces();
   const queryClient = useQueryClient();
 
-  const [places, setPlaces] = useState<Place[]>([
-    {  area: 0, address: '' },
-  ]);
+  const [places, setPlaces] = useState<Place[]>([{ area: 0, address: '' }]);
 
   const handleAddForm = () => {
     setPlaces([...places, { area: 0, address: '' }]);
@@ -61,7 +59,7 @@ const AddAdmissionPlacesPage = () => {
 
       queryClient.invalidateQueries({ queryKey: ['admission_places'] });
       toast.success('All admission places successfully added');
-      setPlaces([{  area: 0, address: '' }]);
+      setPlaces([{ area: 0, address: '' }]);
       navigate(`/admissions/${admission_id}/place`);
     } catch (error) {
       console.error('Error:', error);
@@ -77,11 +75,10 @@ const AddAdmissionPlacesPage = () => {
 
           {places.map((place, index) => (
             <div key={index} className="grid grid-cols-12 gap-4 py-3">
-            
-
-              {/* Area */}
               <div className="mb-2 col-span-3">
-                <label className="block text-sm font-medium mb-1 text-formInputText">Area</label>
+                <label className="block text-sm font-medium mb-1 text-formInputText">
+                  Area
+                </label>
                 <Select
                   value={place.area}
                   onChange={(value) => handleChange(index, 'area', value)}
@@ -90,19 +87,21 @@ const AddAdmissionPlacesPage = () => {
                 />
               </div>
 
-              {/* Address */}
               <div className="mb-6 col-span-6 justify-end">
-                <label className="block text-sm font-medium mb-1 text-formInputText">Address</label>
+                <label className="block text-sm font-medium mb-1 text-formInputText">
+                  Address
+                </label>
                 <input
                   type="text"
                   placeholder="Add an address"
                   className="w-full p-2 border rounded focus:outline-none text-gray-600"
                   value={place.address}
-                  onChange={(e) => handleChange(index, 'address', e.target.value)}
+                  onChange={(e) =>
+                    handleChange(index, 'address', e.target.value)
+                  }
                 />
               </div>
 
-              {/* Remove Button */}
               <div className="col-span-1 flex items-center">
                 {places.length > 1 && (
                   <button type="button" onClick={() => handleRemoveForm(index)}>
@@ -113,40 +112,35 @@ const AddAdmissionPlacesPage = () => {
             </div>
           ))}
 
-          {/* Add Form Button + Action Buttons - SAME LINE */}
-          {/* Action buttons and Add button in the same horizontal line */}
-<div className="grid grid-cols-12 items-center mt-6">
-  {/* Add Place */}
-  <div className="col-span-6">
-    <button
-      type="button"
-      onClick={handleAddForm}
-      className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
-    >
-      <PlusIcon /> Add place
-    </button>
-  </div>
+          <div className="grid grid-cols-12 items-center mt-6">
+            <div className="col-span-6">
+              <button
+                type="button"
+                onClick={handleAddForm}
+                className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+              >
+                <PlusIcon /> Add place
+              </button>
+            </div>
 
-  {/* Cancel and Save buttons */}
-  <div className="col-span-12 flex justify-end gap-4 items-center">
-    <LinkButton
-      to={`/admissions/${admission_id}/place`}
-      type="button"
-      variant="cancel"
-      className="px-4 py-5"
-    >
-      Cancel
-    </LinkButton>
-    <button
-      onClick={handleAdd}
-      disabled={isPending}
-      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-    >
-      {isPending ? 'Adding...' : 'Add'}
-    </button>
-  </div>
-</div>
-
+            <div className="col-span-12 flex justify-end gap-4 items-center">
+              <LinkButton
+                to={`/admissions/${admission_id}/place`}
+                type="button"
+                variant="cancel"
+                className="px-4 py-5"
+              >
+                Cancel
+              </LinkButton>
+              <button
+                onClick={handleAdd}
+                disabled={isPending}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              >
+                {isPending ? 'Adding...' : 'Add'}
+              </button>
+            </div>
+          </div>
         </div>
       </Container>
     </div>

@@ -56,7 +56,7 @@ const EditMajorModal: React.FC<EditMajorModalProps> = ({
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-40 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-[430px]">
-        {/* Order Number */}
+       
         <div className="mb-2">
           <label
             htmlFor="orderNumber"
@@ -73,7 +73,7 @@ const EditMajorModal: React.FC<EditMajorModalProps> = ({
           />
         </div>
 
-        {/* Quota */}
+
         <div className="mb-2">
           <label
             htmlFor="quota"
@@ -90,7 +90,7 @@ const EditMajorModal: React.FC<EditMajorModalProps> = ({
           />
         </div>
 
-        {/* Major Select */}
+   
         <div className="mb-2">
           <label
             htmlFor="major"
@@ -113,7 +113,7 @@ const EditMajorModal: React.FC<EditMajorModalProps> = ({
           )}
         </div>
 
-        {/* Admission Select */}
+     
         <div className="mb-4">
           <label
             htmlFor="admission"
@@ -142,7 +142,7 @@ const EditMajorModal: React.FC<EditMajorModalProps> = ({
           )}
         </div>
 
-        {/* Action Buttons */}
+      
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={onClose}

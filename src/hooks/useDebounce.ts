@@ -9,7 +9,7 @@ function useDebounce<T>(value: T, delay: number): T {
         }, delay);
 
         return () => {
-            clearTimeout(handler); // Clear the timeout if value or delay changes
+            clearTimeout(handler); 
         };
     }, [value, delay]);
 

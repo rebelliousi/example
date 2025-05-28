@@ -46,7 +46,7 @@ const parseToYyyyMmDd = (dateString?: string | null): string => {
   }
 
   console.warn(`Unparseable date string for input: ${dateString}. Returning empty.`);
-  return ''; // Tanınmayan format
+  return ''; 
 };
 
 

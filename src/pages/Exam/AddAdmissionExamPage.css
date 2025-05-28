@@ -30,13 +30,13 @@
 
 
 .ant-picker .ant-picker-suffix {
-    margin-left: 20px; /* İkonu yaklaştırmak için değeri azalt */
+    margin-left: 20px; 
   }
 
  
 .ant-picker:focus,
 .ant-picker:active {
-  outline: none !important; /* Odaklanma çerçevesini kaldır */
-  box-shadow: none !important; /* Gölgeyi kaldır */
-  border: none !important; /* Border'ı da kaldır, gerekirse */
+  outline: none !important; 
+  box-shadow: none !important; 
+  border: none !important; 
 }

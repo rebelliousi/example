@@ -20,11 +20,11 @@ export interface ApplicationStatus {
 }
 
 export interface RegionApplication {
-  user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary" | null; // null eklendi
+  user__area__region: "ashgabat" | "ahal" | "balkan" | "dashoguz" | "lebap" | "mary" | null; 
   count: number;
 }
 
-export interface MajorGenderStat { // Major'e özgü cinsiyet istatistiği için yeni interface
+export interface MajorGenderStat { 
     user__gender: 'male' | 'female';
     count: number;
     percentage: number;
@@ -39,16 +39,16 @@ export interface Major {
   application_count: number;
   fill_percentage: number;
   regions: Record<string, number>;
-  gender?: MajorGenderStat[]; // MajorGenderStat kullanıldı ve opsiyonel olarak işaretlendi
+  gender?: MajorGenderStat[]; 
 }
 
 export interface MilitaryStatus {
-  military_service: 'female' | 'served' | 'not_served' | ''; // '' eklendi
+  military_service: 'female' | 'served' | 'not_served' | ''; 
   count: number;
 }
 
 export interface Degree {
-  degree: 'bachelor' | 'master' | ''; // '' eklendi
+  degree: 'bachelor' | 'master' | ''; 
   count: number;
 }
 

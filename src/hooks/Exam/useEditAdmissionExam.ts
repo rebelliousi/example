@@ -35,7 +35,7 @@ export function useEditAdmissionExamById() {
     mutationFn: editAdmissionExamById,
     onSuccess: () => {
       call('Admission exam edited');
-      queryClient.invalidateQueries({ queryKey: ['admission_exams'] }); // Verileri yeniden çek
+      queryClient.invalidateQueries({ queryKey: ['admission_exams'] }); 
     },
     onError: () => {
       call('Error when editing admission exam'); 

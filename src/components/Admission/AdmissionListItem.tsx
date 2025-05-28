@@ -1,5 +1,5 @@
 import { FC, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Sayfa yönlendirme için
+import { useNavigate } from 'react-router-dom'; 
 import { useDeleteAdmissionById } from '../../hooks/Admission/useDeleteAdmissionById';
 import { IAdmission } from '../../models/models';
 import { useModalStore } from '../../store/modal';
@@ -70,7 +70,7 @@ const AdmissionListItem: FC<AdmissionListItemProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleEdit(); // Bu şekilde, her iki işlemi tek bir onClick içerisinde yapıyoruz
+              handleEdit(); 
             }}
             className="hover:bg-actionButtonHover rounded-full"
           >

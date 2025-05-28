@@ -18,7 +18,7 @@ const ExamSUbjectsListItem: FC<ExamSubjectsListItemProps> = ({ examSubjects, ind
   const { mutate } = useDeleteExamSubjectsById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const { admission_id } = useParams<{ admission_id: string }>();
+
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {

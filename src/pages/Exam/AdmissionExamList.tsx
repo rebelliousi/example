@@ -39,7 +39,7 @@ const AdmissionExamListPage = () => {
 
         {isSuccess && admission?.majors?.map((major, index) => (
               <AdmissionExamListItem
-                key={major.id} //  `major.id`  benzersiz bir key'dir.
+                key={major.id} 
                 major={major}
                 index={index}
               />

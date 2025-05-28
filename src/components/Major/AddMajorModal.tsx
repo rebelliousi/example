@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAddMajor } from '../../hooks/Major/useAddMajor';
 import { useMajor } from '../../hooks/Major/useMajors';
-import { useAdmission } from '../../hooks/Admission/useAdmissions'; // Admission hook'u
+import { useAdmission } from '../../hooks/Admission/useAdmissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import Select from '../InputSelect/Select';
@@ -18,8 +18,8 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const [major, setMajor] = useState<number>(0);
   const [page, setPage] = useState(1);
 
-  const { data: majors, } = useMajor();
-  const { data: admissions} = useAdmission(page); 
+  const { data: majors } = useMajor();
+  const { data: admissions } = useAdmission(page);
   const { mutateAsync, isPending } = useAddMajor();
   const queryClient = useQueryClient();
 
@@ -39,8 +39,7 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         admission,
         order_number: orderNumber,
         quota,
-        major
-     
+        major,
       });
 
       queryClient.invalidateQueries({ queryKey: ['major'] });
@@ -62,7 +61,6 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-40 flex justify-center items-center z-50">
       <div className="bg-white p-9 rounded-lg shadow-lg w-[430px]">
-        {/* Major seçimi */}
         <div className="mb-2">
           <label className="block text-sm py-2 font-medium text-formInputText">
             Major
@@ -85,8 +83,8 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             options={
               admissions?.results
                 .map((item) => ({
-                  id: Number(item.id), // Ensure id is a number
-                  name: String(item.academic_year), // Ensure name is a string
+                  id: Number(item.id),
+                  name: String(item.academic_year),
                 }))
                 .filter((opt) => !isNaN(opt.id)) || []
             }

@@ -15,7 +15,7 @@ export interface ExamDate {
 export interface Exam {
   id: number;
   subject: Subject[];
-  exam_dates: ExamDate[]; // Burayı dizi yaptım
+  exam_dates: ExamDate[]; 
 }
 
 export interface Major {

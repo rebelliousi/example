@@ -12,11 +12,14 @@ interface MajorListItemProps {
   admissionId: number;
 }
 
-const MajorListItem: FC<MajorListItemProps> = ({ major, index, admissionId }) => {
+const MajorListItem: FC<MajorListItemProps> = ({
+  major,
+  index,
+  admissionId,
+}) => {
   const { mutate } = useDeleteMajorById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -42,10 +45,7 @@ const MajorListItem: FC<MajorListItemProps> = ({ major, index, admissionId }) =>
 
   return (
     <>
-      <div
-        className="py-2 group grid cursor-pointer items-center border-t grid-cols-12 hover:bg-listItemHover px-3 text-tableTopText"
-        
-      >
+      <div className="py-2 group grid cursor-pointer items-center border-t grid-cols-12 hover:bg-listItemHover px-3 text-tableTopText">
         <div>
           <h1>{index + 1}</h1>
         </div>
@@ -66,7 +66,7 @@ const MajorListItem: FC<MajorListItemProps> = ({ major, index, admissionId }) =>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleEdit(); // Open the edit modal
+              handleEdit();
             }}
             className="hover:bg-actionButtonHover rounded-full"
           >
@@ -76,7 +76,7 @@ const MajorListItem: FC<MajorListItemProps> = ({ major, index, admissionId }) =>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(); // Trigger delete action
+              handleDelete();
             }}
             className="hover:bg-actionButtonHover rounded-full"
           >

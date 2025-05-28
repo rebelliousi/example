@@ -9,11 +9,9 @@ import { useAdmissionPlaces } from '../../hooks/AdmissionPlace/useAdmissionPlace
 const AdmissionPlaceListPage = () => {
   const { admission_id } = useParams();
 
-
-  const { data, isSuccess, isLoading} = useAdmissionPlaces(Number(admission_id));
-
-
-
+  const { data, isSuccess, isLoading } = useAdmissionPlaces(
+    Number(admission_id)
+  );
 
   return (
     <div>
@@ -35,13 +33,14 @@ const AdmissionPlaceListPage = () => {
           <div className="col-span-5"></div>
         </div>
 
-        {isSuccess && data?.places?.map((place, index) => (
-          <AdmissionPlaceListItem
-            key={place.id}
-            place={place}
-            index={index}
-          />
-        ))}
+        {isSuccess &&
+          data?.places?.map((place, index) => (
+            <AdmissionPlaceListItem
+              key={place.id}
+              place={place}
+              index={index}
+            />
+          ))}
       </TableLayout>
 
       {isLoading && <LoadingIndicator />}

@@ -1,4 +1,4 @@
-// SpecialGroups.tsx (or SpecialGroups.jsx)
+
 import React from "react";
 
 interface SpecialGroupsProps {

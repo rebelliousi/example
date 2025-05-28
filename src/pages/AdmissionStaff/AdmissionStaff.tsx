@@ -8,7 +8,6 @@ import AdmissionStaffListItem from '../../components/AdmissionStaff/AdmisiionSta
 
 const AdmissionStaffList = () => {
   const { admission_id } = useParams<{ admission_id: string }>();
- 
 
   const admissionIdNumber = Number(admission_id);
   const { data, isSuccess, isLoading } = useAdmissionStaffs(admissionIdNumber);
@@ -16,7 +15,8 @@ const AdmissionStaffList = () => {
   return (
     <div>
       <div className="flex justify-start mb-4">
-        <Link to={`/admissions/${admission_id}/staff/add`}
+        <Link
+          to={`/admissions/${admission_id}/staff/add`}
           className="bg-blue-500 w-[100px] text-sm text-white px-2 py-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
         >
           <PlusIcon className="mr-2" />
@@ -39,14 +39,12 @@ const AdmissionStaffList = () => {
             <AdmissionStaffListItem
               key={staff.id}
               staff={staff}
-              index={index + 1} // sıra numarası
+              index={index + 1}
             />
           ))}
       </TableLayout>
 
       {isLoading && <LoadingIndicator />}
-
-     
     </div>
   );
 };

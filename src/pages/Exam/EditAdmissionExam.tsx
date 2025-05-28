@@ -14,7 +14,7 @@ import {
   useEditAdmissionExamById,
 } from '../../hooks/Exam/useEditAdmissionExam';
 import { useMajorById } from '../../hooks/Major/useMajorById';
-import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor'; // Import useAdmissionMajor
+import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor'; 
 import { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
@@ -37,14 +37,14 @@ const EditAdmissionExamPage = () => {
   }>();
   const navigate = useNavigate();
 
-  const { data: examData } = useMajorById(major_id); // Fetch exam data using major_id
-  const { data: majorData } = useAdmissionMajor(1); // Fetch admission major data
+  const { data: examData } = useMajorById(major_id); 
+  const { data: majorData } = useAdmissionMajor(1); 
 
   const {
     data: subjectsData,
     isLoading: isLoadingSubjects,
     error: errorSubjects,
-  } = useAdmissionSubjects(1); // TODO: Fix hardcoded page number
+  } = useAdmissionSubjects(1);
 
   const {
     mutateAsync,
@@ -72,7 +72,7 @@ const EditAdmissionExamPage = () => {
     { name: 'Mary', value: 'mary' },
   ];
 
-  // Initialize state from examData
+
   useEffect(() => {
     if (major_id && examData?.exams) {
       const uniqueSubjects = Array.from(
@@ -155,7 +155,7 @@ const EditAdmissionExamPage = () => {
         const subjectId = selectedSubjectIdsPerColumn[i];
 
         if (!subjectId || subjectId === 0) {
-            continue; // Skip if no subject is selected
+            continue; 
         }
 
         const examDates: ExamDate[] = [];
@@ -175,7 +175,7 @@ const EditAdmissionExamPage = () => {
         if (examDates.length > 0) {
           payloadsToSend.push({
             admission_major: selectedMajorId,
-            subject: [subjectId], // Wrap subjectId in an array
+            subject: [subjectId], 
             exam_dates: examDates,
           });
         }
@@ -195,7 +195,7 @@ const EditAdmissionExamPage = () => {
         return;
       }
 
-      await mutateAsync({ id: major_id, data: payloadsToSend[0] }); // Use mutateAsync from useEditAdmissionExamById
+      await mutateAsync({ id: major_id, data: payloadsToSend[0] }); 
       toast.success('Exam details edited successfully!');
       queryClient.invalidateQueries({ queryKey: ['admission_exams'] });
       navigate(`/admissions/${admission_id}/exams`);
@@ -247,7 +247,7 @@ const EditAdmissionExamPage = () => {
 
   subjectOptions.unshift({ value: 0, label: 'Select Subject' });
 
-  // Get the major name from admission major data
+
   const majorName = majorData?.results?.find((major) => major.id === Number(major_id))?.major || 'Select Major';
   return (
     <div>

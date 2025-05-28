@@ -85,7 +85,7 @@ const AddAdmissionStaffPage = () => {
 
           {staffInputs.map((input, index) => (
             <div key={index} className="flex flex-col space-y-5 py-3">
-              {/* Staff */}
+         
               <div className="col-span-4">
                 <label className="block text-sm font-medium mb-1 text-formInputText">Staff</label>
                 <Select
@@ -99,7 +99,6 @@ const AddAdmissionStaffPage = () => {
 
               
 
-              {/* Role */}
               <div className="col-span-3">
                 <label className="block text-sm font-medium mb-1 text-formInputText">Role</label>
                 <Select
@@ -111,7 +110,6 @@ const AddAdmissionStaffPage = () => {
                 />
               </div>
 
-              {/* Remove Button */}
               <div className="col-span-1 flex items-center">
                 {staffInputs.length > 1 && (
                   <button type="button" onClick={() => handleRemoveStaff(index)}>
@@ -122,7 +120,7 @@ const AddAdmissionStaffPage = () => {
             </div>
           ))}
 
-          {/* Bottom Buttons */}
+         
           <div className="grid grid-cols-12 items-center mt-6">
             <div className="col-span-12 flex justify-end gap-4 items-center">
               <LinkButton

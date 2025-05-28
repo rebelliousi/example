@@ -61,13 +61,13 @@ interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'oly
         phone: string;
         email: string;
     };
-    admission_major: (number | null)[]; // Change admission_major to accept null and number
+    admission_major: (number | null)[]; 
 }
 
 const ApplicationForm: React.FC = () => {
     const [application, setApplication] = useState<IApplicationWithFiles>({
         primary_major: null,
-        admission_major: [null, null, null], // Initialize as three null values
+        admission_major: [null, null, null], 
         user: {
             first_name: '',
             last_name: '',
@@ -499,7 +499,7 @@ const ApplicationForm: React.FC = () => {
         const formattedApplication: IApplication = {
             ...application,
              primary_major: application.primary_major !== null ? application.primary_major : 0,
-            admission_major: application.admission_major.filter(major => major !== null) as number[], // Filter out null values and cast to number[]
+            admission_major: application.admission_major.filter(major => major !== null) as number[], 
             user: {
                 ...application.user,
                 date_of_birth: application.user.date_of_birth
@@ -598,7 +598,7 @@ const ApplicationForm: React.FC = () => {
                         Personal Information
                     </h3>
                     <div className="flex flex-col">
-                        {/* Personal Information Fields */}
+                     
                         <div className="flex items-center space-x-5 mb-2">
                             <label className="p-3 font-medium w-48">First Name:</label>
                             <div className="p-4 w-[400px]">
@@ -727,7 +727,7 @@ const ApplicationForm: React.FC = () => {
                             <label className="p-3 font-medium w-48">Area:</label>
                             <div className="p-4  w-[400px] h-20">
                                 <Select
-                                    value={application.user.area || null} // Eğer alan yoksa null göster
+                                    value={application.user.area || null} 
                                     onChange={(value) => handleUserChange('area', value)}
                                     style={{ width: '100%', height: '85%' }}
                                     placeholder="Select Area"
@@ -786,7 +786,6 @@ const ApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Majors */}
                 <div className="w-full mb-40">
                     <h3 className="text-md text-[#4570EA] font-semibold mb-2">
                         Major Selection
@@ -796,7 +795,7 @@ const ApplicationForm: React.FC = () => {
                             <label className="p-3 font-medium w-48">Primary Major:</label>
                             <div className="p-4 w-[400px]">
                                 <Select
-                                    value={application.primary_major || null} // Eğer major yoksa null göster
+                                    value={application.primary_major || null}
                                     onChange={(value) =>
                                         setApplication((prev) => ({
                                             ...prev,
@@ -815,7 +814,7 @@ const ApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Admission Majors - Using Three Select Components */}
+                       
                         {[0, 1, 2].map((index) => (
                             <div className="flex items-center space-x-5 mb-2" key={index}>
                                 <label className="p-3 font-medium w-48">Admission Major {index + 1}:</label>
@@ -826,7 +825,7 @@ const ApplicationForm: React.FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                         placeholder={`Select Admission Major ${index + 1}`}
                                     >
-                                        <Select.Option value={null}>Major</Select.Option> {/* Allow selecting no major */}
+                                        <Select.Option value={null}>Major</Select.Option> 
                                         {majors?.results.map((major) => (
                                             <Select.Option key={major.id} value={major.id}>
                                                 {major.major}
@@ -839,7 +838,6 @@ const ApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Guardians */}
                 <div className="mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Guardians</h3>
@@ -1057,7 +1055,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Institutions */}
+              
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1161,7 +1159,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Olympics */}
+             
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1255,7 +1253,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Documents */}
+             
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>

@@ -1,7 +1,7 @@
 .custom-select {
-  height: 3rem !important; /* İstediğiniz yüksekliği ayarlayın */
-  line-height: 2.5rem !important; /* Yazı yüksekliğini ortalamak için */
-  padding-top: 0.25rem !important; /* Gerekirse padding'i ayarlayın */
+  height: 3rem !important; 
+  line-height: 2.5rem !important;
+  padding-top: 0.25rem !important; 
   padding-bottom: 0.25rem !important;
 }
 

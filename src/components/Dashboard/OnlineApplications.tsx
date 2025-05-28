@@ -9,17 +9,16 @@ interface OnlineApplicationsProps {
 const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStatus, applicationsByRegion }) => {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
-  // Filtrelenmiş başvurular
+  
   const filteredApplicationsByRegion = selectedRegion
     ? applicationsByRegion?.filter(
         (region) => region.user__area__region === selectedRegion
       )
     : applicationsByRegion;
 
-    //Toplam Başvuru Sayısı (Filtrelenmiş veya Tüm)
     const totalApplicantsForRegion = filteredApplicationsByRegion?.reduce((sum, region) => sum + region.count, 0) || 0;
 
-    // Duruma Göre Başvuruları Filtreleme
+
     const verified = applicationStatus?.find(status => status.status === "APPROVED")?.count || 0;
     const waiting = applicationStatus?.find(status => status.status === "PENDING")?.count || 0;
 
@@ -28,7 +27,7 @@ const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStat
 
   return (
     <div className="bg-white rounded-xl shadow p-5 w-full h-auto">
-      {/* Header */}
+    
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <ExampleIcon />
@@ -42,7 +41,7 @@ const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStat
         </div>
       </div>
 
-      {/* Region Filters */}
+   
       <div className="flex items-center gap-4 text-sm mb-4 text-gray-600 flex-wrap">
         <button
           className={`font-medium px-2 py-1 rounded ${selectedRegion === null ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
@@ -82,7 +81,7 @@ const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStat
         </button>
       </div>
 
-      {/* Statistic Box */}
+    
       <div className="grid grid-cols-12 gap-2 mt-10">
         <div className="col-span-5 flex items-center gap-4 bg-blue-50 py-3 px-3 rounded">
           <h1 className="text-5xl font-bold text-blue-600">{totalApplicantsForRegion}</h1>
@@ -91,7 +90,6 @@ const OnlineApplications: React.FC<OnlineApplicationsProps> = ({ applicationStat
           </span>
         </div>
 
-        {/* Verified & Waiting */}
         <div className="col-span-7 pl-2 flex items-center gap-6 text-sm">
           <div className="border-r pr-4 flex flex-col items-start">
             <h1 className="text-md text-[#7C8FAC]"> Verified: </h1>

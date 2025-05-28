@@ -62,7 +62,7 @@ const ApplicationListPage = () => {
 
               {isSuccess && data?.results.map((application, index) => (
                 <ApplicationListItem
-                  key={application.admission}  //id needs here  
+                  key={application.admission}   
                   application={application}
                   index={index + 1 + (page - 1) * 20} 
                 />

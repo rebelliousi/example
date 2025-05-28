@@ -26,7 +26,7 @@ const AddAdmissionModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
   const handleSave = async () => {
     if (academicYear === null) {
-      toast.error('Please select an academic year'); // Display error toast
+      toast.error('Please select an academic year'); 
       return;
     }
 
@@ -39,14 +39,14 @@ const AddAdmissionModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
       queryClient.invalidateQueries({ queryKey: ['admission'] });
 
-      toast.success('Admission successfully added'); // Display success toast
+      toast.success('Admission successfully added'); 
       onClose();
       setStartDate('');
       setEndDate('');
       setAcademicYear(null);
     } catch (error) {
       console.error('Error adding admission ', error);
-      toast.error('Failed to add admission'); // Display error toast
+      toast.error('Failed to add admission'); 
     }
   };
 

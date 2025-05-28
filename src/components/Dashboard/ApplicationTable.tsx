@@ -1,6 +1,6 @@
 import React from "react";
 import { Major } from "../../hooks/Statistics/useStatistics";
-import PencilIcon from "../../assets/icons/PencilIcon";
+
 import ExampleIcon from "../../assets/icons/ExampleIcon";
 
 interface ApplicationsTableProps {
@@ -12,7 +12,6 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
     return <div>No major data available.</div>;
   }
 
-  // Calculate totals for each region
   const totals = {
     ahal: 0,
     mary: 0,
@@ -30,7 +29,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
     totals.lebap += major.regions.lebap || 0;
     totals.balkan += major.regions.balkan || 0;
 
-    // Sum girls and boys using gender stats from the major object
+  
     const totalGirls = major.gender?.find((stat) => stat.user__gender === "female")?.count || 0;
     const totalBoys = major.gender?.find((stat) => stat.user__gender === "male")?.count || 0;
 
@@ -71,9 +70,9 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="max-h-[314px] overflow-y-auto"> {/*  max-height = 414 - padding - title height;  414px - (6*2)px - 96px */}
+        <div className="max-h-[314px] overflow-y-auto"> 
           <table className="w-full text-sm text-left text-gray-700">
-            <thead className="text-xs  text-[#7C8FAC] sticky top-0 bg-white z-10"> {/* sticky header */}
+            <thead className="text-xs  text-[#7C8FAC] sticky top-0 bg-white z-10"> 
               <tr>
                 <th className="px-4 py-2">No</th>
                 <th className="px-4 py-2">Major</th>
@@ -89,7 +88,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({ majors }) => {
             </thead>
             <tbody>
               {majors.map((item, i) => {
-                //Sum girls and boys using gender stats from the major object
+               
                 const totalGirls = item.gender?.find((stat) => stat.user__gender === "female")?.count || 0;
                 const totalBoys = item.gender?.find((stat) => stat.user__gender === "male")?.count || 0;
                 return (
