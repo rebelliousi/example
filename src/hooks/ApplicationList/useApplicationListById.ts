@@ -1,74 +1,51 @@
-import { useQuery } from '@tanstack/react-query';
-import api from '../../api';
+import { useQuery } from "@tanstack/react-query";
+import api from "../../api";
 
-
-
-
-export interface FileItem {
+export interface File {
   id: number;
   name: string;
   path: string;
   order: number;
 }
 
-
 export interface Document {
   id: number;
-  owner_id?: number;
-  owner?: number;
   type:
-    | 'school_certificate'
-    | 'passport'
-    | 'military_document'
-    | 'information'
-    | 'relationship_tree'
-    | 'medical_record'
-    | 'description'
-    | 'terjiimehal'
-    | 'labor_book'
-    | 'Dushundirish';
-  files: FileItem[];
+        | 'passport'
+        | 'military_document'
+        | 'relationship_tree'
+        | 'medical_record'
+        | 'description'
+        | 'terjiimehal'
+        | 'labor_book'
+        | 'Dushundirish';
+  file: File;
 }
-
 
 export interface Guardian {
   id: number;
-  relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt' | string;
+  user: number; //  user ID
+  relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt' | string;// Define possible values for relation
   first_name: string;
   last_name: string;
+  work_place: string;
   father_name: string;
   date_of_birth: string;
   place_of_birth: string;
   phone: string;
   address: string;
-  work_place: string;
   documents: Document[];
 }
 
-export interface Institution {
-  id: number;
-  application?: number;
-  name: string;
-  school_gpa: number;
-  graduated_year: number;
-  certificates: FileItem[]; 
-}
 
-export interface Olympic {
-  id: number;
-  application?: number;
-  type: 'area' | 'region' | 'state' | 'international' | 'other';
-  description: string;
-  files: FileItem[];
-}
 
-export interface ApplicationUser {
-  username?: string;
+export interface User {
+  username: string;
   first_name: string;
   last_name: string;
   father_name: string;
   area: number;
-  gender: 'male' | 'female';
+  gender: "male" | "female" ; // Define possible values for gender
   nationality: string;
   date_of_birth: string;
   address: string;
@@ -77,31 +54,66 @@ export interface ApplicationUser {
   phone: string;
   email: string;
   guardians: Guardian[];
-  documents?: Document[]; 
-}
-
-
-export interface IApplication {
-  id: number;
-  primary_major: number;
-  admission_major: number[];
-  user: ApplicationUser;
-  institutions: Institution[];
-  olympics: Olympic[];
   documents: Document[];
 }
 
+export interface Certificate {
+  id: number;
+  name: string;
+  path: string;
+  order: number;
+}
 
-const getApplicationById = async (id: string | undefined): Promise<IApplication> => {
-  const response = await api.get(`/admission/application/${id}/`);
-  return response.data;
+export interface Institution {
+  id: number;
+  application: number; // application ID
+  name: string;
+  school_gpa: number;
+  graduated_year: number;
+  certificates: Certificate[];
+}
+
+export interface OlympicFile {
+  id: number;
+  name: string;
+  path: string;
+  order: number;
+}
+
+export interface Olympic {
+  id: number;
+  application: number;  // application ID
+  type: 'area' | 'region' | 'state' | 'international' | 'other';   // Define possible values for type
+  description: string;
+  files: OlympicFile[];
+}
+
+
+export interface ApplicationData {
+  id: number;
+  primary_major: number;
+  admission_major: number[];
+  user: User;
+  institutions: Institution[];
+  olympics: Olympic[];
+  date_rejected: string | null;  //  string or null
+  rejection_reason: string;
+  date_approved: string | null; // string or null
+  status: "PENDING" | "APPROVED" | "REJECTED"; //  status string enum
+}
+
+// Renamed for clarity and consistency.  Using IApplicationData everywhere.
+export type IApplicationData = ApplicationData;
+
+const getApplicationById = async (id: string): Promise<IApplicationData> => { // id should not be optional
+    const response = await api.get(`/admission/application/${id}/`);
+    return response.data;
 };
 
-
-export function useApplicationById(id: string | undefined) {
-  return useQuery<IApplication>({
-    queryKey: ['application', id],
-    queryFn: () => getApplicationById(id),
-    enabled: !!id,
-  });
+export function useApplicationById(id: string) {  // id should not be optional
+    return useQuery<IApplicationData>({
+        queryKey: ['application', id],
+        queryFn: () => getApplicationById(id),
+        enabled: true, //  'id' is required, so no need for a boolean check.  The query won't run if id is undefined/null at the hook level.
+    });
 }

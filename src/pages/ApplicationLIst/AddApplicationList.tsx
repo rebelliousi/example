@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useArea } from '../../hooks/Area/useAreas';
 import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import {
-    Document,
     Guardian,
     IApplication,
     Institution,
     Olympic,
     useAddApplication,
+    Document as ApplicationDocument, // Avoid name clash
+    GuardianDocument
 } from '../../hooks/ApplicationList/useAddApplicationList';
 import { useSendFiles } from '../../hooks/ApplicationList/useSendFiles';
 import { Select, DatePicker, Input, message, Upload } from 'antd';
@@ -21,53 +22,102 @@ import { LinkButton } from '../../components/Buttons/LinkButton';
 import { useNavigate } from 'react-router-dom';
 import { InboxOutlined } from '@ant-design/icons';
 
-interface InstitutionWithFiles extends Institution {
+// Enum'lar
+enum GuardianRelation {
+    FATHER = 'father',
+    MOTHER = 'mother',
+    GRANDPARENT = 'grandparent',
+    SIBLING = 'sibling',
+    UNCLE = 'uncle',
+    AUNT = 'aunt',
+}
+
+enum OlympicType {
+    AREA = 'area',
+    REGION = 'region',
+    STATE = 'state',
+    INTERNATIONAL = 'international',
+    OTHER = 'other',
+}
+
+// Use the GuardianDocument's type union directly, rather than a separate enum
+enum DocumentType {
+    SCHOOL_CERTIFICATE = 'school_certificate',
+    PASSPORT = 'passport',
+    MILITARY_DOCUMENT = 'military_document',
+    INFORMATION = 'information',
+    RELATIONSHIP_TREE = 'relationship_tree',
+    MEDICAL_RECORD = 'medical_record',
+    DESCRIPTION = 'description',
+    TERJIIMEHAL = 'terjiimehal',
+    LABOR_BOOK = 'labor_book',
+    DUSHUNDIRISH = 'Dushundirish',
+}
+
+// Yardımcı Arayüzler
+interface WithFilePaths {
+    filePaths?: string[];
+}
+
+interface InstitutionWithFiles extends Omit<Institution, 'certificates'>, WithFilePaths {
     certificates: number[];
-    certificateFilePaths?: string[];
 }
 
-interface OlympicWithFiles extends Olympic {
+interface OlympicWithFiles extends Omit<Olympic, 'files'>, WithFilePaths {
     files: number[];
-    olympicFilePaths?: string[];
 }
 
-interface DocumentWithFiles extends Document {
-    files: number[];
-    documentFilePaths?: string[];
+
+export interface Document {
+    owner?: number;
+    type: DocumentType;
+    file: number | null;
 }
 
-interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
-    documents: number[];
-    documentFilePaths?: string[];
+interface DocumentWithFiles extends Omit<ApplicationDocument, 'file'>, WithFilePaths {  //Use ApplicationDocument to avoid confusion
+    file: number | null;
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians'| 'primary_major'| 'user'| 'admission_major'> {
+
+interface GuardianWithFiles extends Omit<Guardian, 'documents'>, WithFilePaths {
+    documents: GuardianDocumentWithFile[];
+}
+
+interface ApplicationUserForm {
+    first_name: string;
+    last_name: string;
+    father_name: string;
+    area: number | null;
+    gender: 'male' | 'female';
+    nationality: string;
+    date_of_birth: string;
+    address: string;
+    place_of_birth: string;
+    home_phone: string;
+    phone: string;
+    email: string;
+}
+
+interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'primary_major' | 'user' | 'admission_major'> {
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
     documents: DocumentWithFiles[];
     guardians: GuardianWithFiles[];
     primary_major: number | null;
-    user: {
-        first_name: string;
-        last_name: string;
-        father_name: string;
-        area: number | null;
-        gender: string;
-        nationality: string;
-        date_of_birth: string;
-        address: string;
-        place_of_birth: string;
-        home_phone: string;
-        phone: string;
-        email: string;
-    };
-    admission_major: (number | null)[]; 
+    user: ApplicationUserForm;
+    admission_major: (number | null)[];
 }
+
+interface GuardianDocumentWithFile {
+    type: DocumentType;
+    file: number | null;
+}
+
 
 const ApplicationForm: React.FC = () => {
     const [application, setApplication] = useState<IApplicationWithFiles>({
         primary_major: null,
-        admission_major: [null, null, null], 
+        admission_major: [null, null, null],
         user: {
             first_name: '',
             last_name: '',
@@ -84,7 +134,7 @@ const ApplicationForm: React.FC = () => {
         },
         guardians: [
             {
-                relation: 'father',
+                relation: GuardianRelation.FATHER,
                 first_name: '',
                 last_name: '',
                 father_name: '',
@@ -94,7 +144,7 @@ const ApplicationForm: React.FC = () => {
                 address: '',
                 work_place: '',
                 documents: [],
-                documentFilePaths: []
+                filePaths: [],
             },
         ],
         institutions: [
@@ -103,22 +153,22 @@ const ApplicationForm: React.FC = () => {
                 school_gpa: 0,
                 graduated_year: 0,
                 certificates: [],
-                certificateFilePaths: [],
+                filePaths: [],
             },
         ],
         olympics: [
             {
-                type: 'area',
+                type: OlympicType.AREA,
                 description: '',
                 files: [],
-                olympicFilePaths: [],
+                filePaths: [],
             },
         ],
         documents: [
             {
-                type: 'school_certificate',
-                files: [],
-                documentFilePaths: [],
+                type: DocumentType.SCHOOL_CERTIFICATE,
+                file: null, // Başlangıçta null
+                filePaths: [],
             },
         ],
     });
@@ -133,14 +183,15 @@ const ApplicationForm: React.FC = () => {
         isPending: isFileUploadLoading,
     } = useSendFiles();
 
+    // **Modified Date Formatting Function**
     const formatDateForApi = (date: moment.Moment | null): string => {
         if (!date) return '';
-        return date.format('DD.MM.YYYY');
+        return date.format('YYYY-MM-DD'); // API expects YYYY-MM-DD
     };
 
     const formatDateForInput = (dateString: string): moment.Moment | null => {
         if (!dateString) return null;
-        return moment(dateString, 'DD.MM.YYYY');
+        return moment(dateString, 'YYYY-MM-DD');  // Parse as YYYY-MM-DD
     };
 
     const handleUserChange = (name: string, value: any) => {
@@ -177,10 +228,17 @@ const ApplicationForm: React.FC = () => {
         });
     };
 
-   const handleGuardianFileUpload = async (
+    const [selectedGuardianDocumentType, setSelectedGuardianDocumentType] = useState<DocumentType | null>(null);
+
+    const handleGuardianFileUpload = async (
         index: number,
         fileList: UploadFile[]
     ) => {
+        if (!selectedGuardianDocumentType) {
+            message.error("Please select a document type first.");
+            return;
+        }
+
         if (fileList && fileList.length > 0) {
             const file = fileList[0].originFileObj as File;
 
@@ -188,16 +246,17 @@ const ApplicationForm: React.FC = () => {
             formData.append('path', file);
 
             uploadFile(formData, {
-                onSuccess: (data) => {
+                onSuccess: (data: any) => { // data'nın türünü any olarak değiştirdim.
                     setApplication((prev) => {
                         const newGuardians = [...prev.guardians];
-                        const newFiles = [...newGuardians[index].documents, data.id];
-                        const newDocumentFilePaths = [...newGuardians[index].documentFilePaths || [], data.path];
-
+                        const updatedDocuments: GuardianDocumentWithFile[] = [...newGuardians[index].documents, {
+                            type: selectedGuardianDocumentType,
+                            file: data.id,
+                        }];
                         newGuardians[index] = {
                             ...newGuardians[index],
-                            documents: newFiles,
-                            documentFilePaths: newDocumentFilePaths
+                            documents: updatedDocuments,
+                            filePaths: [...(newGuardians[index].filePaths || []), data.path],
                         };
                         return {
                             ...prev,
@@ -205,6 +264,7 @@ const ApplicationForm: React.FC = () => {
                         };
                     });
                     message.success('File uploaded successfully');
+                    setSelectedGuardianDocumentType(null); // Reset after successful upload
                 },
                 onError: (error: any) => {
                     console.error('File upload failed', error);
@@ -237,7 +297,7 @@ const ApplicationForm: React.FC = () => {
     };
 
     const handleInstitutionFileUpload = async (
-         index: number,
+        index: number,
         fileList: UploadFile[]
     ) => {
         if (fileList && fileList.length > 0) {
@@ -250,13 +310,10 @@ const ApplicationForm: React.FC = () => {
                 onSuccess: (data) => {
                     setApplication((prev) => {
                         const newInstitutions = [...prev.institutions];
-                        const newCertificates = [...newInstitutions[index].certificates, data.id];
-                        const newCertificateFilePaths = [...newInstitutions[index].certificateFilePaths || [], data.path];
-
                         newInstitutions[index] = {
                             ...newInstitutions[index],
-                            certificates: newCertificates,
-                            certificateFilePaths: newCertificateFilePaths,
+                            certificates: [...newInstitutions[index].certificates, data.id],
+                            filePaths: [...(newInstitutions[index].filePaths || []), data.path],
                         };
                         return {
                             ...prev,
@@ -275,7 +332,7 @@ const ApplicationForm: React.FC = () => {
 
     const handleOlympicChange = (
         index: number,
-        value: 'area' | 'region' | 'state' | 'international' | 'other',
+        value: OlympicType,
         name: string
     ) => {
         setApplication((prev) => {
@@ -309,8 +366,8 @@ const ApplicationForm: React.FC = () => {
         });
     };
 
-  const handleOlympicFileUpload = async (
-         index: number,
+    const handleOlympicFileUpload = async (
+        index: number,
         fileList: UploadFile[]
     ) => {
         if (fileList && fileList.length > 0) {
@@ -323,13 +380,10 @@ const ApplicationForm: React.FC = () => {
                 onSuccess: (data) => {
                     setApplication((prev) => {
                         const newOlympics = [...prev.olympics];
-                        const newFiles = [...newOlympics[index].files, data.id];
-                        const newOlympicFilePaths = [...newOlympics[index].olympicFilePaths || [], data.path];
-
                         newOlympics[index] = {
                             ...newOlympics[index],
-                            files: newFiles,
-                            olympicFilePaths: newOlympicFilePaths
+                            files: [...newOlympics[index].files, data.id],
+                            filePaths: [...(newOlympics[index].filePaths || []), data.path],
                         };
                         return {
                             ...prev,
@@ -346,12 +400,15 @@ const ApplicationForm: React.FC = () => {
         }
     };
 
-    const handleDocumentChange = (index: number, value: string, name: string) => {
+    // Document File Upload Güncellendi
+    const handleDocumentChange = (index: number, value: DocumentType, name: string) => {
         setApplication((prev) => {
             const newDocuments = [...prev.documents];
             newDocuments[index] = {
                 ...newDocuments[index],
                 [name]: value,
+                file: null, // Dosya ID'sini sıfırla
+                filePaths: [], // Dosya yollarını sıfırla
             };
             return {
                 ...prev,
@@ -360,7 +417,8 @@ const ApplicationForm: React.FC = () => {
         });
     };
 
- const handleDocumentFileUpload = async (
+
+    const handleDocumentFileUpload = async (
         index: number,
         fileList: UploadFile[]
     ) => {
@@ -374,13 +432,10 @@ const ApplicationForm: React.FC = () => {
                 onSuccess: (data) => {
                     setApplication((prev) => {
                         const newDocuments = [...prev.documents];
-                        const newFiles = [...newDocuments[index].files, data.id];
-                        const newDocumentFilePaths = [...newDocuments[index].documentFilePaths || [], data.path];
-
                         newDocuments[index] = {
                             ...newDocuments[index],
-                            files: newFiles,
-                            documentFilePaths: newDocumentFilePaths
+                            file: data.id, // Tek dosya ID'si
+                            filePaths: [data.path],
                         };
                         return {
                             ...prev,
@@ -397,13 +452,14 @@ const ApplicationForm: React.FC = () => {
         }
     };
 
+
     const addGuardian = () => {
         setApplication((prev) => ({
             ...prev,
             guardians: [
                 ...prev.guardians,
                 {
-                    relation: 'father',
+                    relation: GuardianRelation.FATHER,
                     first_name: '',
                     last_name: '',
                     father_name: '',
@@ -413,7 +469,7 @@ const ApplicationForm: React.FC = () => {
                     address: '',
                     work_place: '',
                     documents: [],
-                    documentFilePaths: []
+                    filePaths: [],
                 },
             ],
         }));
@@ -429,7 +485,7 @@ const ApplicationForm: React.FC = () => {
                     school_gpa: 0,
                     graduated_year: 0,
                     certificates: [],
-                    certificateFilePaths: []
+                    filePaths: [],
                 },
             ],
         }));
@@ -441,10 +497,10 @@ const ApplicationForm: React.FC = () => {
             olympics: [
                 ...prev.olympics,
                 {
-                    type: 'area',
+                    type: OlympicType.AREA,
                     description: '',
                     files: [],
-                    olympicFilePaths: []
+                    filePaths: [],
                 },
             ],
         }));
@@ -456,9 +512,9 @@ const ApplicationForm: React.FC = () => {
             documents: [
                 ...prev.documents,
                 {
-                    type: 'school_certificate',
-                    files: [],
-                    documentFilePaths: []
+                    type: DocumentType.SCHOOL_CERTIFICATE,
+                    file: null,
+                    filePaths: [],
                 },
             ],
         }));
@@ -498,40 +554,42 @@ const ApplicationForm: React.FC = () => {
 
         const formattedApplication: IApplication = {
             ...application,
-             primary_major: application.primary_major !== null ? application.primary_major : 0,
-            admission_major: application.admission_major.filter(major => major !== null) as number[], 
+            primary_major: application.primary_major !== null ? application.primary_major : 0,
+            admission_major: application.admission_major.filter(major => major !== null) as number[],
             user: {
                 ...application.user,
                 date_of_birth: application.user.date_of_birth
-                    ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format(
-                        'DD.MM.YYYY'
+                    ? moment(application.user.date_of_birth, 'YYYY-MM-DD').format(  // Format before sending
+                        'YYYY-MM-DD'
                     )
                     : '',
-         area: application.user.area !== null ? application.user.area : 0,
-        gender: application.user.gender === 'male' ? 'male' : 'female',
+                area: application.user.area !== null ? application.user.area : 0,
+                gender: application.user.gender === 'male' ? 'male' : 'female',
             },
             guardians: application.guardians.map((guardian) => ({
                 ...guardian,
+                relation: guardian.relation as Guardian['relation'],
                 date_of_birth: guardian.date_of_birth
-                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
+                    ? moment(guardian.date_of_birth, 'YYYY-MM-DD').format('YYYY-MM-DD') // Format before sending
                     : '',
-                documentFilePaths: undefined,
-               documents: guardian.documents || [],
+                documents: guardian.documents.map(doc => ({
+                    type: doc.type as GuardianDocument['type'],
+                    file: doc.file
+                })) || [], // Map GuardianDocumentWithFile to GuardianDocument
             })),
             institutions: application.institutions.map(institution => ({
                 ...institution,
-                certificateFilePaths: undefined,
                 certificates: institution.certificates || [],
             })),
             olympics: application.olympics.map(olympic => ({
                 ...olympic,
-                olympicFilePaths: undefined,
+                type: olympic.type as Olympic['type'],
                 files: olympic.files || [],
             })),
             documents: application.documents.map(document => ({
                 ...document,
-                documentFilePaths: undefined,
-                files: document.files || [],
+                type: document.type as ApplicationDocument['type'],  // Use ApplicationDocument
+                file: document.file,
             })),
         };
 
@@ -554,7 +612,7 @@ const ApplicationForm: React.FC = () => {
 
     const uploadProps = {
         name: 'file',
-        multiple: true,
+        multiple: false, // Tek dosya yüklemeye izin ver
         beforeUpload: () => false,
         listType: "picture-card" as UploadListType,
     };
@@ -598,7 +656,7 @@ const ApplicationForm: React.FC = () => {
                         Personal Information
                     </h3>
                     <div className="flex flex-col">
-                     
+
                         <div className="flex items-center space-x-5 mb-2">
                             <label className="p-3 font-medium w-48">First Name:</label>
                             <div className="p-4 w-[400px]">
@@ -670,7 +728,7 @@ const ApplicationForm: React.FC = () => {
                             <div className="p-4 w-[400px]">
                                 <DatePicker
                                     className="py-2"
-                                    format="DD.MM.YYYY"
+                                    format="YYYY-MM-DD"  // Use YYYY-MM-DD for display
                                     value={formatDateForInput(application.user.date_of_birth)}
                                     onChange={(date) => handleUserChange('date_of_birth', date)}
                                     style={{ width: '100%' }}
@@ -727,7 +785,7 @@ const ApplicationForm: React.FC = () => {
                             <label className="p-3 font-medium w-48">Area:</label>
                             <div className="p-4  w-[400px] h-20">
                                 <Select
-                                    value={application.user.area || null} 
+                                    value={application.user.area || null}
                                     onChange={(value) => handleUserChange('area', value)}
                                     style={{ width: '100%', height: '85%' }}
                                     placeholder="Select Area"
@@ -814,7 +872,7 @@ const ApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                       
+
                         {[0, 1, 2].map((index) => (
                             <div className="flex items-center space-x-5 mb-2" key={index}>
                                 <label className="p-3 font-medium w-48">Admission Major {index + 1}:</label>
@@ -825,7 +883,7 @@ const ApplicationForm: React.FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                         placeholder={`Select Admission Major ${index + 1}`}
                                     >
-                                        <Select.Option value={null}>Major</Select.Option> 
+                                        <Select.Option value={null}>Major</Select.Option>
                                         {majors?.results.map((major) => (
                                             <Select.Option key={major.id} value={major.id}>
                                                 {major.major}
@@ -862,14 +920,14 @@ const ApplicationForm: React.FC = () => {
                                             }
                                             style={{ width: '100%', height: '40px' }}
                                         >
-                                            <Select.Option value="father">Father</Select.Option>
-                                            <Select.Option value="mother">Mother</Select.Option>
-                                            <Select.Option value="grandparent">
+                                            <Select.Option value={GuardianRelation.FATHER}>Father</Select.Option>
+                                            <Select.Option value={GuardianRelation.MOTHER}>Mother</Select.Option>
+                                            <Select.Option value={GuardianRelation.GRANDPARENT}>
                                                 Grandparent
                                             </Select.Option>
-                                            <Select.Option value="sibling">Sibling</Select.Option>
-                                            <Select.Option value="uncle">Uncle</Select.Option>
-                                            <Select.Option value="aunt">Aunt</Select.Option>
+                                            <Select.Option value={GuardianRelation.SIBLING}>Sibling</Select.Option>
+                                            <Select.Option value={GuardianRelation.UNCLE}>Uncle</Select.Option>
+                                            <Select.Option value={GuardianRelation.AUNT}>Aunt</Select.Option>
                                         </Select>
                                     </div>
                                 </div>
@@ -931,7 +989,7 @@ const ApplicationForm: React.FC = () => {
                                     <label className="p-3 font-medium w-48">Date of Birth:</label>
                                     <div className="p-4 w-[400px]">
                                         <DatePicker
-                                            format="DD.MM.YYYY"
+                                            format="YYYY-MM-DD"  // Use YYYY-MM-DD for display
                                             value={formatDateForInput(guardian.date_of_birth)}
                                             onChange={(date) =>
                                                 handleGuardianChange(index, 'date_of_birth', date)
@@ -981,7 +1039,7 @@ const ApplicationForm: React.FC = () => {
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Address:</label>
                                     <div className="p-4 w-[400px]">
-                                                                                <Input
+                                        <Input
                                             className="py-2"
                                             type="text"
                                             name="address"
@@ -1000,7 +1058,7 @@ const ApplicationForm: React.FC = () => {
                                         <Input
                                             className="py-2"
                                             type="text"
-                                            name="                                            work_place"
+                                            name="work_place"
                                             value={guardian.work_place}
                                             onChange={(e) =>
                                                 handleGuardianChange(
@@ -1013,6 +1071,28 @@ const ApplicationForm: React.FC = () => {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="flex items-center space-x-5 mb-2">
+                                    <label className="p-3 font-medium w-48">Document Type:</label>
+                                    <div className="p-4 w-[400px]">
+                                        <Select
+                                            value={selectedGuardianDocumentType}
+                                            onChange={(value) => setSelectedGuardianDocumentType(value as DocumentType)}
+                                            style={{ width: '100%', height: '40px' }}
+                                            placeholder="Select Document Type"
+                                        >
+                                            <Select.Option value={DocumentType.PASSPORT}>Passport</Select.Option>
+                                            <Select.Option value={DocumentType.MILITARY_DOCUMENT}>Military Document</Select.Option>
+                                            <Select.Option value={DocumentType.RELATIONSHIP_TREE}>Relationship Tree</Select.Option>
+                                            <Select.Option value={DocumentType.MEDICAL_RECORD}>Medical Record</Select.Option>
+                                            <Select.Option value={DocumentType.DESCRIPTION}>Description</Select.Option>
+                                            <Select.Option value={DocumentType.TERJIIMEHAL}>Terjiimehal</Select.Option>
+                                            <Select.Option value={DocumentType.LABOR_BOOK}>Labor Book</Select.Option>
+                                            <Select.Option value={DocumentType.DUSHUNDIRISH}>Dushundirish</Select.Option>
+                                        </Select>
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Guardian Document File:</label>
                                     <div className="p-4 w-[400px]">
@@ -1030,11 +1110,11 @@ const ApplicationForm: React.FC = () => {
                                                 Support for a single or bulk upload.
                                             </p>
                                         </Upload.Dragger>
-                                        {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 && (
+                                        {guardian.filePaths && guardian.filePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
                                                 <ul>
-                                                    {guardian.documentFilePaths.map((path, idx) => (
+                                                    {guardian.filePaths.map((path, idx) => (
                                                         <li key={idx}>{path}</li>
                                                     ))}
                                                 </ul>
@@ -1043,6 +1123,7 @@ const ApplicationForm: React.FC = () => {
                                         {isFileUploadLoading && <div>File is uploading...</div>}
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     ))}
@@ -1055,7 +1136,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-              
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1109,10 +1190,10 @@ const ApplicationForm: React.FC = () => {
                                         Graduated Year:
                                     </label>
                                     <div className="p-4 w-[400px]">
-                                      <YearPicker
-                                       className='py-2'
+                                        <YearPicker
+                                            className='py-2'
                                             value={institution.graduated_year ? moment(institution.graduated_year.toString(), 'YYYY') : null}
-                                            onChange={(date:any) => handleGraduationYearChange(index, date)}
+                                            onChange={(date: any) => handleGraduationYearChange(index, date)}
                                         />
                                     </div>
                                 </div>
@@ -1134,11 +1215,11 @@ const ApplicationForm: React.FC = () => {
                                                 Support for a single or bulk upload.
                                             </p>
                                         </Upload.Dragger>
-                                        {institution.certificateFilePaths && institution.certificateFilePaths.length > 0 && (
+                                        {institution.filePaths && institution.filePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
                                                 <ul>
-                                                    {institution.certificateFilePaths.map((path, idx) => (
+                                                    {institution.filePaths.map((path, idx) => (
                                                         <li key={idx}>{path}</li>
                                                     ))}
                                                 </ul>
@@ -1159,7 +1240,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-             
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1182,17 +1263,17 @@ const ApplicationForm: React.FC = () => {
                                         <Select
                                             value={olympic.type}
                                             onChange={(value) =>
-                                                handleOlympicChange(index, value, 'type')
+                                                handleOlympicChange(index, value as OlympicType, 'type')
                                             }
                                             style={{ width: '100%', height: '40px' }}
                                         >
-                                            <Select.Option value="area">Area</Select.Option>
-                                            <Select.Option value="region">Region</Select.Option>
-                                            <Select.Option value="state">State</Select.Option>
-                                            <Select.Option value="international">
+                                            <Select.Option value={OlympicType.AREA}>Area</Select.Option>
+                                            <Select.Option value={OlympicType.REGION}>Region</Select.Option>
+                                            <Select.Option value={OlympicType.STATE}>State</Select.Option>
+                                            <Select.Option value={OlympicType.INTERNATIONAL}>
                                                 International
                                             </Select.Option>
-                                            <Select.Option value="other">Other</Select.Option>
+                                            <Select.Option value={OlympicType.OTHER}>Other</Select.Option>
                                         </Select>
                                     </div>
                                 </div>
@@ -1228,11 +1309,11 @@ const ApplicationForm: React.FC = () => {
                                                 Support for a single or bulk upload.
                                             </p>
                                         </Upload.Dragger>
-                                        {olympic.olympicFilePaths && olympic.olympicFilePaths.length > 0 && (
+                                        {olympic.filePaths && olympic.filePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
                                                 <ul>
-                                                    {olympic.olympicFilePaths.map((path, idx) => (
+                                                    {olympic.filePaths.map((path, idx) => (
                                                         <li key={idx}>{path}</li>
                                                     ))}
                                                 </ul>
@@ -1253,7 +1334,7 @@ const ApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-             
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
@@ -1274,36 +1355,36 @@ const ApplicationForm: React.FC = () => {
                                         <Select
                                             value={document.type}
                                             onChange={(value) =>
-                                                handleDocumentChange(index, value, 'type')
+                                                handleDocumentChange(index, value as DocumentType, 'type')
                                             }
                                             style={{ width: '100%', height: '40px' }}
                                         >
-                                            <Select.Option value="school_certificate">
+                                            <Select.Option value={DocumentType.SCHOOL_CERTIFICATE}>
                                                 School Certificate
                                             </Select.Option>
-                                            <Select.Option value="passport">Passport</Select.Option>
-                                            <Select.Option value="military_document">
+                                            <Select.Option value={DocumentType.PASSPORT}>Passport</Select.Option>
+                                            <Select.Option value={DocumentType.MILITARY_DOCUMENT}>
                                                 Military Document
                                             </Select.Option>
-                                            <Select.Option value="information">
+                                            <Select.Option value={DocumentType.INFORMATION}>
                                                 Information
                                             </Select.Option>
-                                            <Select.Option value="relationship_tree">
+                                            <Select.Option value={DocumentType.RELATIONSHIP_TREE}>
                                                 Relationship Tree
                                             </Select.Option>
-                                            <Select.Option value="medical_record">
+                                            <Select.Option value={DocumentType.MEDICAL_RECORD}>
                                                 Medical Record
                                             </Select.Option>
-                                            <Select.Option value="description">
+                                            <Select.Option value={DocumentType.DESCRIPTION}>
                                                 Description
                                             </Select.Option>
-                                            <Select.Option value="terjiimehal">
+                                            <Select.Option value={DocumentType.TERJIIMEHAL}>
                                                 Terjiimehal
                                             </Select.Option>
-                                            <Select.Option value="labor_book">
+                                            <Select.Option value={DocumentType.LABOR_BOOK}>
                                                 Labor Book
                                             </Select.Option>
-                                            <Select.Option value="Dushundirish">
+                                            <Select.Option value={DocumentType.DUSHUNDIRISH}>
                                                 Dushundirish
                                             </Select.Option>
                                         </Select>
@@ -1326,11 +1407,11 @@ const ApplicationForm: React.FC = () => {
                                                 Support for a single or bulk upload.
                                             </p>
                                         </Upload.Dragger>
-                                        {document.documentFilePaths && document.documentFilePaths.length > 0 && (
+                                        {document.filePaths && document.filePaths.length > 0 && (
                                             <div className="text-sm text-gray-600">
                                                 Uploaded Files:
                                                 <ul>
-                                                    {document.documentFilePaths.map((path, idx) => (
+                                                    {document.filePaths.map((path, idx) => (
                                                         <li key={idx}>{path}</li>
                                                     ))}
                                                 </ul>
@@ -1382,6 +1463,6 @@ const ApplicationForm: React.FC = () => {
             </form>
         </Container>
     );
-};
+}
 
 export default ApplicationForm;

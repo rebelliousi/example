@@ -4,7 +4,6 @@ import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import {
     Document,
     Guardian,
-    IApplication,
     Institution,
     Olympic,
 } from '../../hooks/ApplicationList/useAddApplicationList';
@@ -14,7 +13,7 @@ import moment from 'moment';
 import Container from '../../components/Container/Container'
 
 import { useParams } from 'react-router-dom';
-import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
+import { useApplicationById, IApplicationData } from '../../hooks/ApplicationList/useApplicationListById'; // Correct import here
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 
 const { Text } = Typography;
@@ -29,8 +28,8 @@ interface OlympicWithFiles extends Omit<Olympic, 'files'> {
     olympicFilePaths?: string[];
 }
 
-interface DocumentWithFiles extends Omit<Document, 'files'> {
-    files: number[];
+interface DocumentWithFiles extends Omit<Document, 'file'> { // Changed 'files' to 'file'
+    file?: number;  // file ids
     documentFilePaths?: string[];
 }
 
@@ -40,15 +39,22 @@ interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
     relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians'> {
+interface IApplicationWithFiles extends Omit<IApplicationData, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'user'> {
+    user: Omit<IApplicationData['user'], 'documents' | 'guardians'> & { // Pick the base properties from User interface
+      documents: DocumentWithFiles[];
+      guardians: GuardianWithFiles[];
+    };
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
-    documents: DocumentWithFiles[];
-    guardians: GuardianWithFiles[];
 }
 
 const ApplicationDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+
+    if (!id) {
+        return <p>Application ID not found in URL.</p>;
+    }
+
     const { data: applicationData, isLoading } = useApplicationById(id);
     const [application, setApplication] = useState<IApplicationWithFiles | null>(null);
 
@@ -61,6 +67,7 @@ const ApplicationDetails: React.FC = () => {
                 primary_major: applicationData.primary_major,
                 admission_major: applicationData.admission_major,
                 user: {
+                    username: applicationData.user.username, // ADD THIS LINE
                     first_name: applicationData.user.first_name,
                     last_name: applicationData.user.last_name,
                     father_name: applicationData.user.father_name,
@@ -73,34 +80,42 @@ const ApplicationDetails: React.FC = () => {
                     home_phone: applicationData.user.home_phone,
                     phone: applicationData.user.phone,
                     email: applicationData.user.email,
+                    documents: applicationData?.user?.documents?.map(doc => { // Modified mapping
+                        const firstFile = doc?.file;
+                        return {
+                            type: doc.type,
+                            file: firstFile?.id,
+                            documentFilePaths: [firstFile?.path || ''] // Use array of filepaths to match existing logic
+                        };
+                    }) || [],
+                    guardians: applicationData?.user?.guardians?.map(guardian => {
+                        const documents = guardian?.documents ? guardian.documents.map(doc => {
+                            const firstFile = doc?.file;
+                            return firstFile?.id || 0;
+                        }).filter(id => id !== 0) : [];
+
+                        const documentFilePaths = guardian?.documents ? guardian.documents.map(doc => {
+                            const firstFile = doc?.file;
+                            return firstFile?.path || '';
+                        }) : [];
+
+                        return {
+                            relation: (guardian.relation && ['mother', 'father', 'grandparent', 'sibling', 'uncle', 'aunt'].includes(guardian.relation))
+                                ? guardian.relation as 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt'
+                                : 'father',
+                            first_name: guardian.first_name,
+                            last_name: guardian.last_name,
+                            father_name: guardian.father_name,
+                            date_of_birth: guardian.date_of_birth,
+                            place_of_birth: guardian.place_of_birth,
+                            phone: guardian.phone,
+                            address: guardian.address,
+                            work_place: guardian.work_place,
+                            documents: documents,
+                            documentFilePaths: documentFilePaths
+                        };
+                    }) || [],
                 },
-                guardians: applicationData?.user?.guardians?.map(guardian => {
-                    const documents = guardian?.documents ? guardian.documents.map(doc => {
-                        const firstFile = doc?.files?.[0];
-                        return firstFile?.id || 0;
-                    }).filter(id => id !== 0) : [];
-
-                    const documentFilePaths = guardian?.documents ? guardian.documents.map(doc => {
-                        const firstFile = doc?.files?.[0];
-                        return firstFile?.path || '';
-                    }) : [];
-
-                    return {
-                        relation: (guardian.relation && ['mother', 'father', 'grandparent', 'sibling', 'uncle', 'aunt'].includes(guardian.relation))
-                            ? guardian.relation as 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt'
-                            : 'father',
-                        first_name: guardian.first_name,
-                        last_name: guardian.last_name,
-                        father_name: guardian.father_name,
-                        date_of_birth: guardian.date_of_birth,
-                        place_of_birth: guardian.place_of_birth,
-                        phone: guardian.phone,
-                        address: guardian.address,
-                        work_place: guardian.work_place,
-                        documents: documents,
-                        documentFilePaths: documentFilePaths
-                    };
-                }) || [],
                 institutions: applicationData.institutions.map(institution => ({
                     name: institution.name,
                     school_gpa: institution.school_gpa,
@@ -114,11 +129,11 @@ const ApplicationDetails: React.FC = () => {
                     files: olympic.files.map(file => file.id),
                     olympicFilePaths: olympic.files.map(file => file.path)
                 })),
-                documents: applicationData?.user?.documents?.map(doc => ({
-                    type: doc.type,
-                    files: doc.files.map(file => file.id),
-                    documentFilePaths: doc.files.map(file => file.path)
-                })) || [],
+                id: applicationData.id,
+                date_approved: applicationData.date_approved,
+                date_rejected: applicationData.date_rejected,
+                rejection_reason: applicationData.rejection_reason,
+                status: applicationData.status
             };
             setApplication(initialApplicationState);
         }
@@ -160,11 +175,11 @@ const ApplicationDetails: React.FC = () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.URL.revokeObjectURL(url); 
+        window.URL.revokeObjectURL(url);
     })
     .catch(error => {
         console.error('Download error:', error);
-    
+
     });
 };
 
@@ -180,7 +195,7 @@ const ApplicationDetails: React.FC = () => {
                         Personal Information
                     </h3>
                     <div className="flex flex-col">
-                       
+
                         <div className="flex items-center space-x-5 mb-2">
                             <label className="p-3 font-medium w-48">First Name:</label>
                             <div className="p-4 w-[400px]">
@@ -283,7 +298,7 @@ const ApplicationDetails: React.FC = () => {
                             <div className="p-3 w-[400px]">
                                 {application.admission_major.length > 0 ? (
                                     <ul>
-                                        {application.admission_major.map(majorId => {
+                                        {application.admission_major.map((majorId: number) => {
                                             const major = majors?.results.find(m => m.id === majorId);
                                             return (
                                                 <li key={majorId}>
@@ -305,7 +320,7 @@ const ApplicationDetails: React.FC = () => {
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Guardians</h3>
                     </div>
-                    {application.guardians.map((guardian, index) => (
+                    {application.user.guardians.map((guardian, index) => (
                         <div key={index} className="mb-4 p-4 rounded relative">
 
                             <div className="flex flex-col">
@@ -524,7 +539,7 @@ const ApplicationDetails: React.FC = () => {
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
                     </div>
-                    {application?.documents?.map((document, index) => (
+                    {application?.user?.documents?.map((document, index) => (
                         <div key={index} className="mb-4 p-4 rounded relative">
                             <div className="flex flex-col">
                                 <div className="flex items-center space-x-5 mb-2">

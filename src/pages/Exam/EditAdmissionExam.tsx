@@ -14,9 +14,10 @@ import {
   useEditAdmissionExamById,
 } from '../../hooks/Exam/useEditAdmissionExam';
 import { useMajorById } from '../../hooks/Major/useMajorById';
-import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor'; 
+import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
+import { format } from 'date-fns';
 
 type Region = 'ashgabat' | 'ahal' | 'balkan' | 'dashoguz' | 'lebap' | 'mary';
 
@@ -25,11 +26,6 @@ interface ExamDateFormState {
   dates: (Dayjs | null)[];
 }
 
-const formatDate = (date: Dayjs | null): string => {
-  if (!date) return '';
-  return date.format('DD.MM.YYYY');
-};
-
 const EditAdmissionExamPage = () => {
   const { admission_id, major_id } = useParams<{
     admission_id: string;
@@ -37,8 +33,8 @@ const EditAdmissionExamPage = () => {
   }>();
   const navigate = useNavigate();
 
-  const { data: examData } = useMajorById(major_id); 
-  const { data: majorData } = useAdmissionMajor(1); 
+  const { data: examData } = useMajorById(major_id);
+  const { data: majorData } = useAdmissionMajor(1);
 
   const {
     data: subjectsData,
@@ -71,7 +67,6 @@ const EditAdmissionExamPage = () => {
     { name: 'Lebap', value: 'lebap' },
     { name: 'Mary', value: 'mary' },
   ];
-
 
   useEffect(() => {
     if (major_id && examData?.exams) {
@@ -152,35 +147,34 @@ const EditAdmissionExamPage = () => {
     const payloadsToSend: AdmissionData[] = [];
 
     for (let i = 0; i < numSubjectColumns; i++) {
-        const subjectId = selectedSubjectIdsPerColumn[i];
+      const subjectId = selectedSubjectIdsPerColumn[i];
 
-        if (!subjectId || subjectId === 0) {
-            continue; 
-        }
+      if (!subjectId || subjectId === 0) {
+        continue;
+      }
 
-        const examDates: ExamDate[] = [];
+      const examDates: ExamDate[] = [];
 
-        examDatesFormState.forEach((regionFormState) => {
-            const date = regionFormState.dates[i];
-            const formattedDate = formatDate(date);
+      examDatesFormState.forEach((regionFormState) => {
+        const date = regionFormState.dates[i];
+        const formattedDate = date ? format(date.toDate(), 'yyyy-MM-dd') : '';
 
-            if (formattedDate) {
-                examDates.push({
-                    region: regionFormState.region,
-                    date_of_exam: formattedDate,
-                });
-            }
-        });
-
-        if (examDates.length > 0) {
-          payloadsToSend.push({
-            admission_major: selectedMajorId,
-            subject: [subjectId], 
-            exam_dates: examDates,
+        if (formattedDate) {
+          examDates.push({
+            region: regionFormState.region,
+            date_of_exam: formattedDate,
           });
         }
-    }
+      });
 
+      if (examDates.length > 0) {
+        payloadsToSend.push({
+          admission_major: selectedMajorId,
+          subject: [subjectId],
+          exam_dates: examDates,
+        });
+      }
+    }
 
     if (payloadsToSend.length === 0) {
       toast.error(
@@ -195,7 +189,7 @@ const EditAdmissionExamPage = () => {
         return;
       }
 
-      await mutateAsync({ id: major_id, data: payloadsToSend[0] }); 
+      await mutateAsync({ id: major_id, data: payloadsToSend[0] });
       toast.success('Exam details edited successfully!');
       queryClient.invalidateQueries({ queryKey: ['admission_exams'] });
       navigate(`/admissions/${admission_id}/exams`);
@@ -247,8 +241,9 @@ const EditAdmissionExamPage = () => {
 
   subjectOptions.unshift({ value: 0, label: 'Select Subject' });
 
-
-  const majorName = majorData?.results?.find((major) => major.id === Number(major_id))?.major || 'Select Major';
+  const majorName = majorData?.results?.find(
+    (major) => major.id === Number(major_id)
+  )?.major || 'Select Major';
   return (
     <div>
       <Container>

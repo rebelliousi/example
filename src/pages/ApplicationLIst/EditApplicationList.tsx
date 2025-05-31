@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useArea } from '../../hooks/Area/useAreas';
 import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import {
-    Document,
-    Guardian,
-    IApplication,
+    Guardian as GuardianType,
     Institution,
     Olympic,
 } from '../../hooks/ApplicationList/useAddApplicationList';
@@ -18,10 +16,26 @@ import TrashIcon from '../../assets/icons/TrashIcon';
 import PlusIcon from '../../assets/icons/PlusIcon';
 import { LinkButton } from '../../components/Buttons/LinkButton';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
+import { useApplicationById, IApplicationData } from '../../hooks/ApplicationList/useApplicationListById';
 import { useEditApplication } from '../../hooks/ApplicationList/useEditApplication';
 import LoadingIndicator from '../../components/Status/LoadingIndicator';
 import { InboxOutlined } from '@ant-design/icons';
+
+// Define Document interface
+interface Document {
+    type:
+    | 'school_certificate'
+    | 'passport'
+    | 'military_document'
+    | 'information'
+    | 'relationship_tree'
+    | 'medical_record'
+    | 'description'
+    | 'terjiimehal'
+    | 'labor_book'
+    | 'Dushundirish';
+    file: number | null;
+}
 
 interface InstitutionWithFiles extends Omit<Institution, 'certificates'> {
     certificates: number[];
@@ -33,31 +47,59 @@ interface OlympicWithFiles extends Omit<Olympic, 'files'> {
     olympicFilePaths?: string[];
 }
 
-interface DocumentWithFiles extends Omit<Document, 'files'> {
-    files: number[];
-    documentFilePaths?: string[];
+interface DocumentWithFiles extends Document { // Extend the defined Document interface
+    documentFilePath?: string; // single path
 }
 
-interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
-    documents: number[];
-    documentFilePaths?: string[];
+interface GuardianDocument { // Define the structure for individual guardian document
+    file: number | null;
+    fileType:
+        | 'school_certificate'
+        | 'passport'
+        | 'military_document'
+        | 'information'
+        | 'relationship_tree'
+        | 'medical_record'
+        | 'description'
+        | 'terjiimehal'
+        | 'labor_book'
+        | 'Dushundirish';
+    documentFilePath?: string;
+}
+
+interface GuardianWithFiles extends Omit<GuardianType, 'documents'> {
+    documents: GuardianDocument[];
     relation: 'mother' | 'father' | 'grandparent' | 'sibling' | 'uncle' | 'aunt';
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'primary_major' | 'admission_major'> {
+interface IApplicationWithFiles {
+    primary_major: number | null;
+    admission_major: (number | null)[];
+    user: {
+        first_name: string;
+        last_name: string;
+        father_name: string;
+        area: number;
+        gender: "male" | "female";
+        nationality: string;
+        date_of_birth: string;
+        address: string;
+        place_of_birth: string;
+        home_phone: string;
+        phone: string;
+        email: string;
+    };
+    guardians: GuardianWithFiles[];
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
     documents: DocumentWithFiles[];
-    guardians: GuardianWithFiles[];
-    primary_major: number | null;
-    admission_major: (number | null)[];
 }
 
 const EditApplicationForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { data: applicationData, isLoading } = useApplicationById(id);
+    const applicationId = id || ''; // Provide a default value
+    const { data: applicationData, isLoading } = useApplicationById(applicationId);
     const [application, setApplication] = useState<IApplicationWithFiles | null>(null);
-
     const { data: areas } = useArea();
     const { data: majors } = useAdmissionMajor(1);
     const mutation = useEditApplication();
@@ -72,7 +114,7 @@ const EditApplicationForm: React.FC = () => {
         if (applicationData) {
             const initialApplicationState: IApplicationWithFiles = {
                 primary_major: applicationData.primary_major,
-                admission_major: [null, null, null],
+                admission_major: applicationData.admission_major ? [...applicationData.admission_major] : [null, null, null],
                 user: {
                     first_name: applicationData.user.first_name,
                     last_name: applicationData.user.last_name,
@@ -89,13 +131,11 @@ const EditApplicationForm: React.FC = () => {
                 },
                 guardians: applicationData?.user?.guardians?.map(guardian => {
                     const documents = guardian?.documents ? guardian.documents.map(doc => {
-                        const firstFile = doc?.files?.[0];
-                        return firstFile?.id || 0;
-                    }).filter(id => id !== 0) : [];
-
-                    const documentFilePaths = guardian?.documents ? guardian.documents.map(doc => {
-                        const firstFile = doc?.files?.[0];
-                        return firstFile?.path || '';
+                        return {
+                            file: doc?.file?.id || null,
+                            fileType: doc.type,
+                            documentFilePath: doc?.file?.path || ''
+                        };
                     }) : [];
 
                     return {
@@ -111,7 +151,6 @@ const EditApplicationForm: React.FC = () => {
                         address: guardian.address,
                         work_place: guardian.work_place,
                         documents: documents,
-                        documentFilePaths: documentFilePaths
                     };
                 }) || [],
                 institutions: applicationData.institutions.map(institution => ({
@@ -129,14 +168,11 @@ const EditApplicationForm: React.FC = () => {
                 })),
                 documents: applicationData?.user?.documents?.map(doc => ({
                     type: doc.type,
-                    files: doc.files.map(file => file.id),
-                    documentFilePaths: doc.files.map(file => file.path)
+                    file: doc.file?.id || null, // Modified for single file
+                    documentFilePath: doc.file?.path || '' // Modified for single file
                 })) || [],
             };
-          
-            if (applicationData.admission_major && applicationData.admission_major.length === 3) {
-                initialApplicationState.admission_major = [...applicationData.admission_major];
-            }
+
             setApplication(initialApplicationState);
         }
     }, [applicationData]);
@@ -144,12 +180,12 @@ const EditApplicationForm: React.FC = () => {
 
     const formatDateForApi = (date: moment.Moment | null): string => {
         if (!date) return '';
-        return date.format('DD.MM.YYYY');
+        return date.format('YYYY-MM-DD'); // API expects YYYY-MM-DD
     };
 
     const formatDateForInput = (dateString: string): moment.Moment | null => {
         if (!dateString) return null;
-        return moment(dateString, 'DD.MM.YYYY');
+        return moment(dateString, 'YYYY-MM-DD');  // Parse YYYY-MM-DD format
     };
 
     const handleUserChange = (name: string, value: any) => {
@@ -190,8 +226,32 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
+    const handleGuardianDocumentTypeChange = (index: number, docIndex: number, fileType: Document['type']) => {
+        if (!application) return;
+
+        setApplication((prev) => {
+            if (!prev) return null;
+            const newGuardians = [...prev.guardians];
+            const newDocuments = [...newGuardians[index].documents];
+            newDocuments[docIndex] = {
+                ...newDocuments[docIndex],
+                fileType: fileType,
+            };
+            newGuardians[index] = {
+                ...newGuardians[index],
+                documents: newDocuments,
+            };
+
+            return {
+                ...prev,
+                guardians: newGuardians,
+            };
+        });
+    };
+
     const handleGuardianFileUpload = async (
         index: number,
+        docIndex: number,
         fileList: UploadFile[]
     ) => {
         if (!application) return;
@@ -207,14 +267,18 @@ const EditApplicationForm: React.FC = () => {
                     setApplication((prev) => {
                         if (!prev) return null;
                         const newGuardians = [...prev.guardians];
-                        const newFiles = [...newGuardians[index].documents, data.id];
-                        const newDocumentFilePaths = [...(newGuardians[index].documentFilePaths || []), data.path];
+                        const newDocuments = [...newGuardians[index].documents];
+                        newDocuments[docIndex] = {
+                            ...newDocuments[docIndex],
+                            file: data.id, // Assign the ID of the uploaded file
+                            documentFilePath: data.path, // Assign the path of the uploaded file
+                        };
 
                         newGuardians[index] = {
                             ...newGuardians[index],
-                            documents: newFiles,
-                            documentFilePaths: newDocumentFilePaths
+                            documents: newDocuments,
                         };
+
                         return {
                             ...prev,
                             guardians: newGuardians,
@@ -335,7 +399,7 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-   const handleOlympicFileUpload = async (
+    const handleOlympicFileUpload = async (
         index: number,
         fileList: UploadFile[]
     ) => {
@@ -352,13 +416,9 @@ const EditApplicationForm: React.FC = () => {
                     setApplication((prev) => {
                         if (!prev) return null;
                         const newOlympics = [...prev.olympics];
-                        const newFiles = [...newOlympics[index].files, data.id];
-                        const newOlympicFilePaths = [...(newOlympics[index].olympicFilePaths || []), data.path];
-
                         newOlympics[index] = {
                             ...newOlympics[index],
-                            files: newFiles,
-                            olympicFilePaths: newOlympicFilePaths
+                            files: [data.id], // Assign the ID of the uploaded file as array
                         };
                         return {
                             ...prev,
@@ -391,7 +451,7 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-   const handleDocumentFileUpload = async (
+    const handleDocumentFileUpload = async (
         index: number,
         fileList: UploadFile[]
     ) => {
@@ -408,13 +468,10 @@ const EditApplicationForm: React.FC = () => {
                     setApplication((prev) => {
                         if (!prev) return null;
                         const newDocuments = [...prev.documents];
-                        const newFiles = [...newDocuments[index].files, data.id];
-                        const newDocumentFilePaths = [...(newDocuments[index].documentFilePaths || []), data.path];
-
                         newDocuments[index] = {
                             ...newDocuments[index],
-                            files: newFiles,
-                            documentFilePaths: newDocumentFilePaths
+                            file: data.id,
+                            documentFilePath: data.path,
                         };
                         return {
                             ...prev,
@@ -430,6 +487,7 @@ const EditApplicationForm: React.FC = () => {
             });
         }
     };
+
 
     const addGuardian = () => {
         if (!application) return;
@@ -447,8 +505,7 @@ const EditApplicationForm: React.FC = () => {
                     phone: '',
                     address: '',
                     work_place: '',
-                    documents: [],
-                    documentFilePaths: []
+                    documents: [{ file: null, fileType: 'school_certificate' }], // Initialize with a default document
                 },
             ],
         }) : null);
@@ -495,12 +552,12 @@ const EditApplicationForm: React.FC = () => {
                 ...prev.documents,
                 {
                     type: 'school_certificate',
-                    files: [],
-                    documentFilePaths: []
+                    file: null,  // Initialize as null
                 },
             ],
         }) : null);
     };
+
 
     const removeItem = (
         type: 'guardians' | 'institutions' | 'olympics' | 'documents',
@@ -519,7 +576,7 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-     const handleAdmissionMajorChange = (index: number, value: number | null) => {
+    const handleAdmissionMajorChange = (index: number, value: number | null) => {
         setApplication(prev => {
             if (!prev) return null;
             const newAdmissionMajors = [...prev.admission_major];
@@ -528,67 +585,67 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!application || !id) return;
+ const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!application || !id) return;
 
-   
-        if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
-            message.error('Lütfen zorunlu alanları doldurun.');
-            return;
-        }
+    if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
+        message.error('Lütfen zorunlu alanları doldurun.');
+        return;
+    }
 
-        const formattedApplication: IApplication = {
-            primary_major: application.primary_major !== null ? application.primary_major : 0,
-            admission_major: application.admission_major.filter(major => major !== null) as number[],
-           user: {
+    const formattedApplication: any = { // Type 'any' because the backend expects number as a foreign key
+        primary_major: application.primary_major !== null ? application.primary_major : 0,
+        admission_major: application.admission_major.filter(major => major !== null) as number[],
+        user: {
             ...application.user,
-            date_of_birth: application.user.date_of_birth
-                ? moment(application.user.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
-                : '',
-            
-            area: application.user.area !== null ? application.user.area : 0, 
-            gender: application.user.gender === 'male' ? 'male' : 'female', 
+            date_of_birth: application.user.date_of_birth,
+            area: application.user.area !== null ? application.user.area : 0,
+            gender: application.user.gender === 'male' ? 'male' : 'female',
         },
-            guardians: application.guardians.map((guardian) => ({
+        guardians: application.guardians.map((guardian) => {
+            return {
                 ...guardian,
-                date_of_birth: guardian.date_of_birth
-                    ? moment(guardian.date_of_birth, 'DD.MM.YYYY').format('DD.MM.YYYY')
-                    : '',
-                documentFilePaths: undefined,
+                date_of_birth: guardian.date_of_birth, //date_of_birth zaten YYYY-MM-DD formatında
+                documents: guardian.documents.map(doc => ({
+                    file: doc.file,
+                    type: doc.fileType
+                })),
                 relation: guardian.relation
-            })),
-            institutions: application.institutions.map(institution => ({
-                ...institution,
-                certificateFilePaths: undefined,
-            })),
-            olympics: application.olympics.map(olympic => ({
-                ...olympic,
-                olympicFilePaths: undefined,
-            })),
-            documents: application.documents.map(document => ({
-                ...document,
-                documentFilePaths: undefined,
-            })),
-        };
-        try {
-            mutation.mutate({ id: Number(id), data: formattedApplication }, {
-                onSuccess: () => {
-                    message.success('Başvuru başarıyla güncellendi!');
-                    navigate('/application_list');
-                },
-                onError: (error: any) => {
-                    console.error('Güncelleme başarısız:', error);
-                    message.error('Başvuru güncellenirken bir hata oluştu!');
-                },
-            });
-        } catch (error) {
-            console.error('Başvuru gönderilirken hata oluştu:', error);
-            message.error('Beklenmedik bir hata oluştu.');
-        }
+            };
+        }),
+        institutions: application.institutions.map(institution => ({
+            ...institution,
+            certificates: institution.certificates, // Send only the file ids
+        })),
+        olympics: application.olympics.map(olympic => ({
+            ...olympic,
+            files: olympic.files,
+        })),
+        documents: application.documents.map(document => ({
+            type: document.type,
+            file: document.file !== null ? document.file : null,
+        })),
     };
 
-      const uploadProps = {
+    try {
+        mutation.mutate({ id: Number(id), data: formattedApplication }, {
+            onSuccess: () => {
+                message.success('Başvuru başarıyla güncellendi!');
+                navigate('/application_list');
+            },
+            onError: (error: any) => {
+                console.error('Güncelleme başarısız:', error);
+                message.error('Başvuru güncellenirken bir hata oluştu!');
+            },
+        });
+    } catch (error) {
+        console.error('Başvuru gönderilirken hata oluştu:', error);
+        message.error('Beklenmedik bir hata oluştu.');
+    }
+};
+
+    const uploadProps = {
         name: 'file',
         multiple: false,
         beforeUpload: () => false,
@@ -827,7 +884,7 @@ const EditApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-         
+
                 <div className="w-full mb-40">
                     <h3 className="text-md text-[#4570EA] font-semibold mb-2">
                         Major Selection
@@ -879,7 +936,7 @@ const EditApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-       
+
                 <div className="mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Guardians</h3>
@@ -906,8 +963,7 @@ const EditApplicationForm: React.FC = () => {
                                         >
                                             <Select.Option value="father">Father</Select.Option>
                                             <Select.Option value="mother">Mother</Select.Option>
-                                            <Select.Option value="grandparent">
-                                                Grandparent
+                                            <Select.Option value="grandparent">                                                Grandparent
                                             </Select.Option>
                                             <Select.Option value="sibling">Sibling</Select.Option>
                                             <Select.Option value="uncle">Uncle</Select.Option>
@@ -936,7 +992,7 @@ const EditApplicationForm: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center space-x-5 mb-2">
-                                    <label className="p-3 font-medium w-48">Last Name:</label>
+                                    <label className="p-3 font-medium                                         w-48">Last Name:</label>
                                     <div className="p-4 w-[400px]">
                                         <Input
                                             className="py-2"
@@ -1053,36 +1109,79 @@ const EditApplicationForm: React.FC = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-5 mb-2">
-                                    <label className="p-3 font-medium w-48">Guardian Document File:</label>
-                                    <div className="p-4 w-[400px]">
-                                        <Upload.Dragger
-                                            {...uploadProps}
-                                            onChange={(info) => {
-                                                handleGuardianFileUpload(index, info.fileList);
-                                            }}
-                                        >
-                                            <p className="ant-upload-drag-icon">
-                                                <InboxOutlined />
-                                            </p>
-                                            <p className="ant-upload-text">Click or drag file to this area to upload</p>
-                                            <p className="ant-upload-hint">
-                                                Support for a single or bulk upload.
-                                            </p>
-                                        </Upload.Dragger>
-                                        {guardian.documentFilePaths && guardian.documentFilePaths.length > 0 && (
-                                            <div className="text-sm text-gray-600">
-                                                Uploaded Files:
-                                                <ul>
-                                                    {guardian.documentFilePaths.map((path, idx) => (
-                                                        <li key={idx}>{path}</li>
-                                                    ))}
-                                                </ul>
+
+                                {guardian.documents.map((doc, docIndex) => (
+                                    <div key={docIndex} className="mb-4 p-4 rounded relative">
+                                        <div className="flex items-center space-x-5 mb-2">
+                                            <label className="p-3 font-medium w-48">Document Type:</label>
+                                            <div className="p-4 w-[400px]">
+                                                <Select
+                                                    value={doc.fileType}
+                                                    onChange={(value) =>
+                                                        handleGuardianDocumentTypeChange(index, docIndex, value)
+                                                    }
+                                                    style={{ width: '100%', height: '40px' }}
+                                                >
+                                                    <Select.Option value="school_certificate">
+                                                        School Certificate
+                                                    </Select.Option>
+                                                    <Select.Option value="passport">Passport</Select.Option>
+                                                    <Select.Option value="military_document">
+                                                        Military Document
+                                                    </Select.Option>
+                                                    <Select.Option value="information">
+                                                        Information
+                                                    </Select.Option>
+                                                    <Select.Option value="relationship_tree">
+                                                        Relationship Tree
+                                                    </Select.Option>
+                                                    <Select.Option value="medical_record">
+                                                        Medical Record
+                                                    </Select.Option>
+                                                    <Select.Option value="description">
+                                                        Description
+                                                    </Select.Option>
+                                                    <Select.Option value="terjiimehal">
+                                                        Terjiimehal
+                                                    </Select.Option>
+                                                    <Select.Option value="labor_book">
+                                                        Labor Book
+                                                    </Select.Option>
+                                                    <Select.Option value="Dushundirish">
+                                                        Dushundirish
+                                                    </Select.Option>
+                                                </Select>
                                             </div>
-                                        )}
-                                        {isFileUploadLoading && <div>File is uploading...</div>}
+                                        </div>
+
+                                        <div className="flex items-center space-x-5 mb-2">
+                                            <label className="p-3 font-medium w-48">Guardian Document File:</label>
+                                            <div className="p-4 w-[400px]">
+                                                <Upload.Dragger
+                                                    {...uploadProps}
+                                                    onChange={(info) => {
+                                                        handleGuardianFileUpload(index, docIndex, info.fileList);
+                                                    }}
+                                                >
+                                                    <p className="ant-upload-drag-icon">
+                                                        <InboxOutlined />
+                                                    </p>
+                                                    <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                                    <p className="ant-upload-hint">
+                                                        Support for a single or bulk upload.
+                                                    </p>
+                                                </Upload.Dragger>
+                                                {doc.documentFilePath && (
+                                                    <div className="text-sm text-gray-600">
+                                                        Uploaded Files:
+                                                        <p>{doc.documentFilePath}</p>
+                                                    </div>
+                                                )}
+                                                {isFileUploadLoading && <div>File is uploading...</div>}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     ))}
@@ -1095,7 +1194,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-           
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1138,7 +1237,7 @@ const EditApplicationForm: React.FC = () => {
                                             value={institution.school_gpa}
                                             onChange={(e) => handleInstitutionChange(index, e)}
                                             placeholder="Enter GPA"
-        
+
                                             max="5"
                                         />
                                     </div>
@@ -1148,11 +1247,11 @@ const EditApplicationForm: React.FC = () => {
                                     <label className="p-3 font-medium w-48">
                                         Graduated Year:
                                     </label>
-                                     <div className="p-4 w-[400px]">
-                                      <YearPicker
-                                      className='py-2'
+                                    <div className="p-4 w-[400px]">
+                                        <YearPicker
+                                            className='py-2'
                                             value={institution.graduated_year ? moment(institution.graduated_year.toString(), 'YYYY') : null}
-                                            onChange={(date:any) => handleGraduationYearChange(index, date)}
+                                            onChange={(date: any) => handleGraduationYearChange(index, date)}
                                         />
                                     </div>
                                 </div>
@@ -1199,7 +1298,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-      
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">
@@ -1293,7 +1392,7 @@ const EditApplicationForm: React.FC = () => {
                     </button>
                 </div>
 
-        
+
                 <div className="w-full mb-40">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-md text-[#4570EA] font-semibold">Documents</h3>
@@ -1366,14 +1465,10 @@ const EditApplicationForm: React.FC = () => {
                                                 Support for a single or bulk upload.
                                             </p>
                                         </Upload.Dragger>
-                                        {document.documentFilePaths && document.documentFilePaths.length > 0 && (
+                                        {document.documentFilePath && (
                                             <div className="text-sm text-gray-600">
-                                                Uploaded Files:
-                                                <ul>
-                                                    {document.documentFilePaths.map((path, idx) => (
-                                                        <li key={idx}>{path}</li>
-                                                    ))}
-                                                </ul>
+                                                Uploaded File:
+                                                <p>{document.documentFilePath}</p>
                                             </div>
                                         )}
                                         {isFileUploadLoading && <div>File is uploading...</div>}

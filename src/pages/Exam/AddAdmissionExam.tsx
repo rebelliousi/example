@@ -15,6 +15,10 @@ import {
 } from '../../hooks/Exam/useAddAdmissionExam';
 import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/tr'; 
+import { format } from 'date-fns';
+
 
 type Region = 'ashgabat' | 'ahal' | 'balkan' | 'dashoguz' | 'lebap' | 'mary';
 
@@ -23,25 +27,20 @@ interface ExamDateFormState {
   dates: (Dayjs | null)[];
 }
 
-const formatDate = (date: Dayjs | null): string => {
-  if (!date) return '';
-  return date.format('DD.MM.YYYY');
-};
-
 const AddAdmissionExamPage = () => {
-  const { admission_id } = useParams<{ admission_id: string }>(); 
+  const { admission_id } = useParams<{ admission_id: string }>();
   const navigate = useNavigate();
 
   const {
     data: majorData,
     isLoading: isLoadingMajor,
     error: errorMajor,
-  } = useAdmissionMajor(1); 
+  } = useAdmissionMajor(1);
   const {
     data: subjectsData,
     isLoading: isLoadingSubjects,
     error: errorSubjects,
-  } = useAdmissionSubjects(1); 
+  } = useAdmissionSubjects(1);
 
   const {
     mutateAsync,
@@ -69,26 +68,23 @@ const AddAdmissionExamPage = () => {
   ];
 
   useEffect(() => {
- 
     const newExamDatesFormState = regions.map((region) => ({
-        region: region.value,
-        dates: Array(numSubjectColumns).fill(null),
+      region: region.value,
+      dates: Array(numSubjectColumns).fill(null),
     }));
     setExamDatesFormState(newExamDatesFormState);
 
-
     setSelectedSubjectIdsPerColumn((prev) => {
-        const newSelectedSubjects = [...prev];
-        if (newSelectedSubjects.length < numSubjectColumns) {
-            for (let i = newSelectedSubjects.length; i < numSubjectColumns; i++) {
-                newSelectedSubjects.push(0);
-            }
-        } else if (newSelectedSubjects.length > numSubjectColumns) {
-            newSelectedSubjects.splice(numSubjectColumns);
+      const newSelectedSubjects = [...prev];
+      if (newSelectedSubjects.length < numSubjectColumns) {
+        for (let i = newSelectedSubjects.length; i < numSubjectColumns; i++) {
+          newSelectedSubjects.push(0);
         }
-        return newSelectedSubjects;
+      } else if (newSelectedSubjects.length > numSubjectColumns) {
+        newSelectedSubjects.splice(numSubjectColumns);
+      }
+      return newSelectedSubjects;
     });
-
   }, [numSubjectColumns]);
 
   useEffect(() => {
@@ -112,8 +108,8 @@ const AddAdmissionExamPage = () => {
 
   const handleSave = async () => {
     if (!admission_id) {
-        toast.error("Admission ID is missing.");
-        return;
+      toast.error('Admission ID is missing.');
+      return;
     }
     if (selectedMajorId === null || selectedMajorId === 0) {
       toast.error('Please select a major.');
@@ -133,35 +129,36 @@ const AddAdmissionExamPage = () => {
     const payloadsToSend: AdmissionData[] = [];
 
     for (let i = 0; i < numSubjectColumns; i++) {
-        const subjectId = selectedSubjectIdsPerColumn[i];
+      const subjectId = selectedSubjectIdsPerColumn[i];
 
-        if (!subjectId || subjectId === 0) {
-            continue; 
-        }
+      if (!subjectId || subjectId === 0) {
+        continue;
+      }
 
-        const examDates: ExamDate[] = [];
+      const examDates: ExamDate[] = [];
 
-        examDatesFormState.forEach((regionFormState) => {
-            const date = regionFormState.dates[i];
-            const formattedDate = formatDate(date);
+      examDatesFormState.forEach((regionFormState) => {
+        const date = regionFormState.dates[i];
+        
+        // Tarihi YYYY-MM-DD formatına dönüştür
+        const formattedDate = date ? format(date.toDate(), 'yyyy-MM-dd') : '';
 
-            if (formattedDate) {
-                examDates.push({
-                    region: regionFormState.region,
-                    date_of_exam: formattedDate,
-                });
-            }
-        });
-
-        if (examDates.length > 0) {
-          payloadsToSend.push({
-            admission_major: selectedMajorId,
-            subject: [subjectId],
-            exam_dates: examDates,
+        if (formattedDate) {
+          examDates.push({
+            region: regionFormState.region,
+            date_of_exam: formattedDate,
           });
         }
-    }
+      });
 
+      if (examDates.length > 0) {
+        payloadsToSend.push({
+          admission_major: selectedMajorId,
+          subject: [subjectId],
+          exam_dates: examDates,
+        });
+      }
+    }
 
     if (payloadsToSend.length === 0) {
       toast.error(
@@ -196,16 +193,16 @@ const AddAdmissionExamPage = () => {
     subjectColumnIndex: number,
     date: Dayjs | null
   ) => {
-      setExamDatesFormState((prevExamDates) =>
-          prevExamDates.map((item) => {
-              if (item.region === region) {
-                  const newDates = [...item.dates];
-                  newDates[subjectColumnIndex] = date;
-                  return { ...item, dates: newDates };
-              }
-              return item;
-          })
-      );
+    setExamDatesFormState((prevExamDates) =>
+      prevExamDates.map((item) => {
+        if (item.region === region) {
+          const newDates = [...item.dates];
+          newDates[subjectColumnIndex] = date;
+          return { ...item, dates: newDates };
+        }
+        return item;
+      })
+    );
   };
 
   const handleSubjectSelectChange = (
@@ -213,9 +210,9 @@ const AddAdmissionExamPage = () => {
     subjectId: number | string
   ) => {
     setSelectedSubjectIdsPerColumn((prev) => {
-        const newSelectedSubjects = [...prev];
-        newSelectedSubjects[subjectColumnIndex] = Number(subjectId);
-        return newSelectedSubjects;
+      const newSelectedSubjects = [...prev];
+      newSelectedSubjects[subjectColumnIndex] = Number(subjectId);
+      return newSelectedSubjects;
     });
   };
 

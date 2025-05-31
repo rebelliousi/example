@@ -11,7 +11,7 @@ export interface Guardian {
   phone: string;
   address: string;
   work_place: string;
-  documents: number[];
+  documents: GuardianDocument[];
 }
 
 export interface Institution {
@@ -30,7 +30,6 @@ export interface Olympic {
 }
 
 export interface Document {
-  owner?: number;
   type:
     | 'school_certificate'
     | 'passport'
@@ -42,7 +41,21 @@ export interface Document {
     | 'terjiimehal'
     | 'labor_book'
     | 'Dushundirish';  // API örneğinde vardı, ekledim
-  files: number[];
+  file: number | null;
+}
+
+export interface GuardianDocument {
+  type:
+    | 'passport'
+    | 'military_document'
+    | 'relationship_tree'
+    | 'medical_record'
+    | 'description'
+    | 'terjiimehal'
+    | 'labor_book'
+    | 'Dushundirish'
+      ;  // API örneğinde vardı, ekledim
+  file: number | null;
 }
 
 export interface ApplicationUser {
