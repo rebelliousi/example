@@ -585,65 +585,67 @@ const EditApplicationForm: React.FC = () => {
         });
     };
 
- const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!application || !id) return;
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!application || !id) return;
 
-    if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
-        message.error('Lütfen zorunlu alanları doldurun.');
-        return;
-    }
+        if (!application.user.first_name || !application.user.last_name || !application.user.father_name) {
+            message.error('Lütfen zorunlu alanları doldurun.');
+            return;
+        }
 
-    const formattedApplication: any = { // Type 'any' because the backend expects number as a foreign key
-        primary_major: application.primary_major !== null ? application.primary_major : 0,
-        admission_major: application.admission_major.filter(major => major !== null) as number[],
-        user: {
-            ...application.user,
-            date_of_birth: application.user.date_of_birth,
-            area: application.user.area !== null ? application.user.area : 0,
-            gender: application.user.gender === 'male' ? 'male' : 'female',
-        },
-        guardians: application.guardians.map((guardian) => {
-            return {
+        const formattedApplication: any = {
+            primary_major: application.primary_major !== null ? application.primary_major : 0,
+            admission_major: application.admission_major.filter(major => major !== null) as number[],
+            user: {
+                ...application.user,
+                date_of_birth: application.user.date_of_birth
+                    ? moment(application.user.date_of_birth).format('YYYY-MM-DD')
+                    : null,
+                area: application.user.area !== null ? application.user.area : 0,
+                gender: application.user.gender === 'male' ? 'male' : 'female',
+            },
+            guardians: application.guardians.map((guardian) => ({
                 ...guardian,
-                date_of_birth: guardian.date_of_birth, //date_of_birth zaten YYYY-MM-DD formatında
+                date_of_birth: guardian.date_of_birth
+                    ? moment(guardian.date_of_birth).format('YYYY-MM-DD')
+                    : null,
                 documents: guardian.documents.map(doc => ({
                     file: doc.file,
                     type: doc.fileType
                 })),
                 relation: guardian.relation
-            };
-        }),
-        institutions: application.institutions.map(institution => ({
-            ...institution,
-            certificates: institution.certificates, // Send only the file ids
-        })),
-        olympics: application.olympics.map(olympic => ({
-            ...olympic,
-            files: olympic.files,
-        })),
-        documents: application.documents.map(document => ({
-            type: document.type,
-            file: document.file !== null ? document.file : null,
-        })),
-    };
+            })),
+            institutions: application.institutions.map(institution => ({
+                ...institution,
+                certificates: institution.certificates,
+            })),
+            olympics: application.olympics.map(olympic => ({
+                ...olympic,
+                files: olympic.files,
+            })),
+            documents: application.documents.map(document => ({
+                type: document.type,
+                file: document.file !== null ? document.file : null,
+            })),
+        };
 
-    try {
-        mutation.mutate({ id: Number(id), data: formattedApplication }, {
-            onSuccess: () => {
-                message.success('Başvuru başarıyla güncellendi!');
-                navigate('/application_list');
-            },
-            onError: (error: any) => {
-                console.error('Güncelleme başarısız:', error);
-                message.error('Başvuru güncellenirken bir hata oluştu!');
-            },
-        });
-    } catch (error) {
-        console.error('Başvuru gönderilirken hata oluştu:', error);
-        message.error('Beklenmedik bir hata oluştu.');
-    }
-};
+        try {
+            mutation.mutate({ id: Number(id), data: formattedApplication }, {
+                onSuccess: () => {
+                      console.log(formattedApplication) 
+                 
+                    navigate('/application_list');
+                },
+                onError: (error: any) => {
+                  console.log(formattedApplication) 
+                  
+                },
+            });
+        } catch (error) {
+            
+        }
+    };
 
     const uploadProps = {
         name: 'file',
@@ -768,7 +770,7 @@ const EditApplicationForm: React.FC = () => {
                             <div className="p-4 w-[400px]">
                                 <DatePicker
                                     className="py-2"
-                                    format="DD.MM.YYYY"
+                                    format="YYYY-MM-DD"
                                     value={formatDateForInput(application.user.date_of_birth)}
                                     onChange={(date) => handleUserChange('date_of_birth', date)}
                                     style={{ width: '100%' }}
@@ -959,11 +961,12 @@ const EditApplicationForm: React.FC = () => {
                                             onChange={(value) =>
                                                 handleGuardianChange(index, 'relation', value)
                                             }
-                                            style={{ width: '100%', height: '40px' }}
+                                            style={{ width: '10%', height: '40px' }}
                                         >
                                             <Select.Option value="father">Father</Select.Option>
                                             <Select.Option value="mother">Mother</Select.Option>
-                                            <Select.Option value="grandparent">                                                Grandparent
+                                            <Select.Option value="grandparent">
+                                                Grandparent
                                             </Select.Option>
                                             <Select.Option value="sibling">Sibling</Select.Option>
                                             <Select.Option value="uncle">Uncle</Select.Option>
@@ -992,7 +995,7 @@ const EditApplicationForm: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center space-x-5 mb-2">
-                                    <label className="p-3 font-medium                                         w-48">Last Name:</label>
+                                    <label className="p-3 font-medium w-48">Last Name:</label>
                                     <div className="p-4 w-[400px]">
                                         <Input
                                             className="py-2"
@@ -1025,11 +1028,11 @@ const EditApplicationForm: React.FC = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex items-center  space-x-5 mb-2">
+                                <div className="flex items-center space-x-5 mb-2">
                                     <label className="p-3 font-medium w-48">Date of Birth:</label>
                                     <div className="p-4 w-[400px]">
                                         <DatePicker
-                                            format="DD.MM.YYYY"
+                                            format="YYYY-MM-DD"
                                             value={formatDateForInput(guardian.date_of_birth)}
                                             onChange={(date) =>
                                                 handleGuardianChange(index, 'date_of_birth', date)
