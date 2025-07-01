@@ -28,7 +28,7 @@ const ApplicationListPage = () => {
               <h1 className="text-lg">Applications</h1>
             </div>
             <div className="text-sm flex gap-2">
-              <LinkButton   to={`/application_list/add`}
+              <LinkButton   to={`/infos/degree-information`}
                 className="flex items-center gap-2 border px-3 py-2 rounded bg-blue-500 text-white"
               >
                 <PlusIcon />

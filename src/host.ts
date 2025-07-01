@@ -1,5 +1,6 @@
 
-export const host = 'http://192.168.14.148:8000/api/v1';
+// export const host = 'http://85.198.81.253/api/v1';
+export const host ='http://46.149.67.231:8000/api/v1';
 
 //http://77.232.129.76:8000/api/v1
 

@@ -14,6 +14,8 @@ const AdmissionExamListPage = () => {
     isLoading,
   } = useAdmissionExams(Number(admission_id));
 
+
+
   return (
     <div>
       <div className="flex justify-start mb-4">

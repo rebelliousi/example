@@ -8,16 +8,13 @@ import TableLayout from '../../components/Table/TableLayout';
 import './AddAdmissionExamPage.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAdmissionSubjects } from '../../hooks/AdmissionSubject/useAdmissionSubject';
-import {
-  ExamDate,
-  AdmissionData,
-  useAddAdmissionExam,
-} from '../../hooks/Exam/useAddAdmissionExam';
-import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 import { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/tr';
 import { format } from 'date-fns';
+import { useEditAdmissionExamById } from '../../hooks/Exam/useEditAdmissionExam';
+import { useMajorById, Exam as ExamType } from '../../hooks/Major/useMajorById';
+import { useAdmissionMajor } from '../../hooks/Major/useAdmissionMajor';
 
 type Region = 'ashgabat' | 'ahal' | 'balkan' | 'dashoguz' | 'lebap' | 'mary';
 
@@ -98,13 +95,14 @@ const SubjectHeader = React.memo(({
   );
 });
 
-const AddAdmissionExamPage = () => {
+const EditAdmissionExamPage = () => {
   const { admission_id } = useParams<{ admission_id: string }>();
   const navigate = useNavigate();
 
   const { data: majorData, isLoading: isLoadingMajor, error: errorMajor } = useAdmissionMajor(1);
   const { data: subjectsData, isLoading: isLoadingSubjects, error: errorSubjects } = useAdmissionSubjects(1);
-  const { mutateAsync, isPending: isAddingExams, error: addExamError } = useAddAdmissionExam();
+  const { mutateAsync: editExamMutation, isPending: isEditingExams, error: editExamError } = useEditAdmissionExamById();
+  const { data: examData, isLoading: isLoadingExam, error: errorExam } = useMajorById(admission_id);
 
   const queryClient = useQueryClient();
 
@@ -127,6 +125,39 @@ const AddAdmissionExamPage = () => {
       dates: Array(numSubjectColumns).fill(null) as (Dayjs | null)[],
     }))
   );
+
+  useEffect(() => {
+    if (examData) {
+      // Assuming there is only one exam per admission for simplicity
+      const exam = examData.exams[0]; // Access the first exam in the array
+
+      if (exam) {
+        setSelectedMajorId(examData.admission);
+        const subjectIds = exam.subject.map(subject => subject.id);
+        setSelectedSubjectIdsPerColumn(subjectIds);
+        setNumSubjectColumns(subjectIds.length);
+
+        // Prepare initial date state
+        const initialDateState = regions.map(region => {
+          const regionExamDates = exam.exam_dates.filter(ed => ed.region === region.value);
+          const dates = Array(subjectIds.length).fill(null);
+
+          subjectIds.forEach((subjectId, index) => {
+            const examDate = regionExamDates.find(ed => exam.subject.some(s => s.id === subjectId)); // Find matching subject
+            if (examDate) {
+              dates[index] = dayjs(examDate.date_of_exam);
+            }
+          });
+
+          return {
+            region: region.value as Region,
+            dates: dates as (Dayjs | null)[],
+          };
+        });
+        setExamDatesFormState(initialDateState);
+      }
+    }
+  }, [examData, regions]);
 
   useEffect(() => {
     setExamDatesFormState(prev =>
@@ -163,17 +194,18 @@ const AddAdmissionExamPage = () => {
   useEffect(() => {
     if (errorMajor) toast.error(`Error loading majors: ${errorMajor.message}`);
     if (errorSubjects) toast.error(`Error loading subjects: ${errorSubjects.message}`);
-    if (addExamError) {
-      console.error('Mutation Error:', addExamError);
+    if (editExamError) {
+      console.error('Mutation Error:', editExamError);
       toast.error(
-        `Error adding exam: ${
-          (addExamError as any)?.response?.data?.detail ||
-          (addExamError as any)?.message ||
+        `Error editing exam: ${
+          (editExamError as any)?.response?.data?.detail ||
+          (editExamError as any)?.message ||
           'An unexpected error occurred.'
         }`
       );
     }
-  }, [errorMajor, errorSubjects, addExamError]);
+    if(errorExam) toast.error(`Error loading exam data: ${errorExam.message}`);
+  }, [errorMajor, errorSubjects, editExamError, errorExam]);
 
   const handleSave = useCallback(async () => {
     if (!admission_id) {
@@ -185,13 +217,17 @@ const AddAdmissionExamPage = () => {
       return;
     }
 
-    const payloadsToSend: AdmissionData[] = [];
+    const payloadsToSend: any = {
+      admission: Number(admission_id),
+      major: selectedMajorId,
+      exams: [] as any
+    };
 
     for (let i = 0; i < numSubjectColumns; i++) {
       const subjectId = selectedSubjectIdsPerColumn[i];
       if (!subjectId || subjectId === 0) continue;
 
-      const examDates: ExamDate[] = [];
+      const examDates: { region: string; date_of_exam: string; }[] = [];
       examDatesFormState.forEach((regionFormState) => {
         const date = regionFormState.dates[i];
         if (date) {
@@ -203,7 +239,7 @@ const AddAdmissionExamPage = () => {
       });
 
       if (examDates.length > 0) {
-        payloadsToSend.push({
+        payloadsToSend.exams.push({
           admission_major: selectedMajorId,
           subject: [subjectId],
           exam_dates: examDates,
@@ -211,30 +247,27 @@ const AddAdmissionExamPage = () => {
       }
     }
 
-    if (payloadsToSend.length === 0) {
+    if (payloadsToSend.exams.length === 0) {
       toast.error('Please select at least one subject and dates for that subject in each selected region.');
       return;
     }
 
-    // Add this line to log the data before sending
-    console.log("Payloads being sent to the backend:", JSON.stringify(payloadsToSend, null, 2));
-
     try {
-      await mutateAsync(payloadsToSend);
-      toast.success('Exam details added successfully!');
+      await editExamMutation({ id: admission_id, data: payloadsToSend });
+      toast.success('Exam details edited successfully!');
       queryClient.invalidateQueries({ queryKey: ['admission_exams'] });
       navigate(`/admissions/${admission_id}/exams`);
     } catch (error: any) {
-      console.error('Error adding exam details:', error);
+      console.error('Error editing exam details:', error);
       toast.error(
-        `Error adding exam details: ${
+        `Error editing exam details: ${
           error?.response?.data?.detail ||
           error?.message ||
           'An unexpected error occurred.'
         }`
       );
     }
-  }, [admission_id, selectedMajorId, numSubjectColumns, selectedSubjectIdsPerColumn, examDatesFormState, mutateAsync, queryClient, navigate]);
+  }, [admission_id, selectedMajorId, numSubjectColumns, selectedSubjectIdsPerColumn, examDatesFormState, editExamMutation, queryClient, navigate]);
 
   const handleMajorChange = useCallback((value: number | string) => {
     setSelectedMajorId(Number(value));
@@ -270,11 +303,15 @@ const AddAdmissionExamPage = () => {
     );
   }, []);
 
+  if (isLoadingMajor || isLoadingSubjects || isLoadingExam) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
       <Container>
         <div className="px-5 py-10">
-          <h1 className="text-lg mb-5">Add Admission Exam</h1>
+          <h1 className="text-lg mb-5">Edit Admission Exam</h1>
 
           <div className="mb-6">
             <label className="block text-sm font-medium mb-1 text-formInputText">
@@ -340,7 +377,7 @@ const AddAdmissionExamPage = () => {
             <button
               onClick={handleSave}
               disabled={
-                isAddingExams ||
+                isEditingExams ||
                 isLoadingMajor ||
                 isLoadingSubjects ||
                 selectedMajorId === null ||
@@ -348,7 +385,7 @@ const AddAdmissionExamPage = () => {
               }
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isAddingExams ? 'Adding...' : 'Add'}
+              {isEditingExams ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -357,4 +394,4 @@ const AddAdmissionExamPage = () => {
   );
 };
 
-export default React.memo(AddAdmissionExamPage);
+export default React.memo(EditAdmissionExamPage);

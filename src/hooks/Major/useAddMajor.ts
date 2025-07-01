@@ -7,7 +7,7 @@ interface MajorFormValues {
   order_number: number;
   quota: number;
   major: number;
-  exams:Exam[]
+  exams?:Exam[]
 }
 interface ExamDate {
   region: string;

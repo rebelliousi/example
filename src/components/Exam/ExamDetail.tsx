@@ -28,10 +28,9 @@ const ExamDetailPage = () => {
     error: errorMajor,
   } = useAdmissionMajor(1);
 
-  const { data: examData } = useMajorById(major_id);
+  const { data: examData, isLoading: isExamDataLoading, error: examDataError } = useMajorById(major_id);
 
   const {
-
     error: errorSubjects,
   } = useAdmissionSubjects(1);
 
@@ -84,11 +83,21 @@ const ExamDetailPage = () => {
     }
   }, [major_id, examData, regions]);
 
+  // Log examData after it's fetched
+  useEffect(() => {
+    if (examData) {
+      console.log("Exam Data:", examData);
+    }
+  }, [examData]);
+
   useEffect(() => {
     if (errorMajor) toast.error(`Error loading majors: ${errorMajor.message}`);
     if (errorSubjects)
       toast.error(`Error loading subjects: ${errorSubjects.message}`);
-  }, [errorMajor, errorSubjects]);
+    if (examDataError) {
+      toast.error(`Error loading exam data: ${examDataError.message}`);
+    }
+  }, [errorMajor, errorSubjects, examDataError]);
 
   const formatDate = (date?: Dayjs | null): string => {
     return date ? date.format('DD.MM.YYYY') : '-';
@@ -105,7 +114,7 @@ const ExamDetailPage = () => {
               Major
             </label>
             <div
-              className="w-96 h-auto rounded  text-gray-600 bg-white p-2 border border-gray-300" 
+              className="w-96 h-auto rounded  text-gray-600 bg-white p-2 border border-gray-300"
               style={{ border: '1px solid #ccc' }}
             >
               {majorData?.results.find((m) => m.id === selectedMajorId)?.major ||

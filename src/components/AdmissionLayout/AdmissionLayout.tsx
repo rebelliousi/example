@@ -7,6 +7,7 @@ import Container from '../Container/Container';
 
 const AdmissionLayout = () => {
   const { admission_id } = useParams<{ admission_id: string }>();
+  console.log(admission_id)
   const { data: admission} = useAdmissionById(admission_id);
 
   return (

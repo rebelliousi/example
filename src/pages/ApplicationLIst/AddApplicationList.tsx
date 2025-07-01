@@ -7,7 +7,7 @@ import {
     Institution,
     Olympic,
     useAddApplication,
-    Document as ApplicationDocument, // Avoid name clash
+    Document as ApplicationDocument,
     GuardianDocument
 } from '../../hooks/ApplicationList/useAddApplicationList';
 import { useSendFiles } from '../../hooks/ApplicationList/useSendFiles';
@@ -98,7 +98,7 @@ interface ApplicationUserForm {
     email: string;
 }
 
-interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'primary_major' | 'user' | 'admission_major'> {
+interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'primary_major' | 'user' | 'admission_major' | 'degree'> {
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
     documents: DocumentWithFiles[];
@@ -106,6 +106,7 @@ interface IApplicationWithFiles extends Omit<IApplication, 'institutions' | 'oly
     primary_major: number | null;
     user: ApplicationUserForm;
     admission_major: (number | null)[];
+    degree?: 'BACHELOR' | 'MASTER';
 }
 
 interface GuardianDocumentWithFile {
@@ -116,6 +117,7 @@ interface GuardianDocumentWithFile {
 
 const ApplicationForm: React.FC = () => {
     const [application, setApplication] = useState<IApplicationWithFiles>({
+        degree: undefined,
         primary_major: null,
         admission_major: [null, null, null],
         user: {
@@ -554,6 +556,7 @@ const ApplicationForm: React.FC = () => {
 
         const formattedApplication: IApplication = {
             ...application,
+            degree: application.degree, // Degree değerini ekle
             primary_major: application.primary_major !== null ? application.primary_major : 0,
             admission_major: application.admission_major.filter(major => major !== null) as number[],
             user: {
@@ -651,6 +654,34 @@ const ApplicationForm: React.FC = () => {
                 className="p-4"
                 encType="multipart/form-data"
             >
+                 {/* Degree Alanı */}
+                 <div className="w-full mb-40">
+                    <h3 className="text-md text-[#4570EA] font-semibold mb-2">
+                        Degree
+                    </h3>
+                    <div className="flex flex-col">
+                        <div className="flex items-center space-x-5 mb-2">
+                            <label className="p-3 font-medium w-48">Degree:</label>
+                            <div className="p-4 w-[400px]">
+                                <Select
+                                    value={application.degree}
+                                    onChange={(value) =>
+                                        setApplication((prev) => ({
+                                            ...prev,
+                                            degree: value as 'BACHELOR' | 'MASTER', // Tür güvenliği için
+                                        }))
+                                    }
+                                    style={{ width: '100%', height: '40px' }}
+                                    placeholder="Select Degree"
+                                >
+                                    <Select.Option value="BACHELOR">Bachelor</Select.Option>
+                                    <Select.Option value="MASTER">Master</Select.Option>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="mb-40">
                     <h3 className="text-md text-[#4570EA] font-semibold mb-2">
                         Personal Information
@@ -957,7 +988,7 @@ const ApplicationForm: React.FC = () => {
                                         <Input
                                             className="py-2"
                                             type="text"
-                                            name="last_name"
+                                                                                        name="last_name"
                                             value={guardian.last_name}
                                             onChange={(e) =>
                                                 handleGuardianChange(index, 'last_name', e.target.value)

@@ -14,6 +14,7 @@ import AddApplicationPage from './pages/ApplicationLIst/AddApplicationList';
 import Dashboard from './pages/Dashboard/Dashboard';
 import EditApplicationForm from './pages/ApplicationLIst/EditApplicationList';
 import ApplicationDetailPage from './pages/ApplicationLIst/ApplicationDetailPage';
+import InformationRoutes from './components/Routes/InformationRoutes';
 
 const App: React.FC = () => {
   return (
@@ -48,11 +49,13 @@ const App: React.FC = () => {
                 path="/application_list/add"
                 element={<AddApplicationPage />}
               />
-
+               
               <Route path="/application_list/edit/:id" element={<EditApplicationForm/>} /> 
 
               <Route path="/statistics" element={<Dashboard />} />
             </Route>
+
+        <Route path="infos/*" element={<InformationRoutes />} />
           </Routes>
         </SnackbarProvider>
       </ModalProvider>

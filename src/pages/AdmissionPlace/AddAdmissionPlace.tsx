@@ -121,7 +121,7 @@ const AddAdmissionPlacesPage = () => {
               >
                 <PlusIcon /> Add place
               </button>
-            </div>
+            </div> 
 
             <div className="col-span-12 flex justify-end gap-4 items-center">
               <LinkButton

@@ -97,14 +97,23 @@ export interface IAdmissionId {
 }
 
 
-interface MajorResponse {
+export interface MajorResponse {
   id: number;
   short_name: string;
   name: string;
+  category: string;
   number: number;
-  degree: number;
-  department: number;
-  category: number;
+  degree: string;
+  faculty: string;
+  faculty_id: number;
+  department: string;
+  department_id: number;
+  student_count: number;
+  group_count: number;
+  first_years: number;
+  second_years: number;
+  third_years: number;
+  fourth_years: number;
 }
 
 export interface IMajor {
@@ -117,3 +126,9 @@ export interface IMajor {
 
 
 
+
+export interface ITab {
+    id: number;
+    name: string;
+    link: string;
+}

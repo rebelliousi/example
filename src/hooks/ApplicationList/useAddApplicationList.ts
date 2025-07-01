@@ -75,6 +75,7 @@ export interface ApplicationUser {
 }
 
 export interface IApplication {
+    degree?: 'BACHELOR' | 'MASTER';
   primary_major: number;
   admission_major: number[];
   user: ApplicationUser;

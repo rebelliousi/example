@@ -5,6 +5,7 @@ import PencilIcon from '../../assets/icons/PencilIcon';
 import TrashIcon from '../../assets/icons/TrashIcon';
 import { useDeleteAdmissionExamById } from '../../hooks/Exam/useDeleteAdmissionExamById';
 import { Major } from '../../hooks/Exam/useAdmissionExams';
+import { useEffect } from 'react';
 
 interface AdmissionExamListItemProps {
     major: Major;
@@ -16,6 +17,12 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ major, index })
     const { setOpen, setStatus, setOnSubmit } = useModalStore();
     const { admission_id } = useParams<{ admission_id: string }>();
     const navigate = useNavigate();
+ 
+
+    // Log major data here
+    useEffect(() => {
+        console.log("Major Data in AdmissionExamListItem:", major);
+    }, [major]);
 
     const handleDelete = useCallback(() => {
         setOnSubmit(async () => {
@@ -39,10 +46,10 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ major, index })
         }
     };
 
-
+    // Updated to safely access nested properties
     const allSubjects = major.exams
-        ?.flatMap((exam) => exam.subject ?? [])
-        .map((subject) => subject.name);
+        ?.map((exam) => exam.subject?.[0]?.name || null) // Use optional chaining and nullish coalescing
+        .filter(name => name !== null); // Filter out null values
 
     return (
         <div
