@@ -1,10 +1,16 @@
 import { create } from 'zustand';
 
 // ---------------------------
-// 🔒 TYPES & INTERFACES
+// 🔒 TYPES & INTERFACES
 // ---------------------------
 
-// General Information Form
+interface Certificate {
+  id: number;
+  name: string;
+  path: string;
+  order: number;
+}
+
 interface GeneralInformationForm {
   first_name: string;
   last_name: string;
@@ -20,7 +26,6 @@ interface GeneralInformationForm {
   email: string;
 }
 
-// Guardian Form
 export type DocumentType =
   | 'school_certificate'
   | 'passport'
@@ -48,22 +53,18 @@ export interface GuardianWithFiles {
   address: string;
   work_place: string;
   documents: { type: DocumentType; file: string; path: string }[];
-  filePaths: string[];
   isDeceased?: boolean | null;
 }
 
-// Education Information Form
 export interface EducationInformation {
+  id?: number;
   name: string;
   school_gpa: number | null;
   graduated_year: number;
-  files: string[];
-  filePaths: string[];
-
+  certificates?: Certificate[];
   isUploading?: boolean;
 }
 
-// Awards Information Form
 export const OlympicType = {
   AREA: 'area',
   REGION: 'region',
@@ -71,18 +72,22 @@ export const OlympicType = {
   INTERNATIONAL: 'international',
   OTHER: 'other',
 } as const;
+
 export type OlympicTypeValue = typeof OlympicType[keyof typeof OlympicType];
 
 export interface AwardInfo {
+  id?: number;
   type: OlympicTypeValue | null;
   description: string | null;
-  files: string[];
-  filePaths: string[];
-  selectedFile: File | null;
+  files: Array<{
+    id: number;
+    name: string;
+    path: string;
+    order: number;
+  }>;
   isUploading: boolean;
 }
 
-// Application Data (comes from backend)
 export interface ApplicationData {
   id: number;
   degree?: 'BACHELOR' | 'MASTER';
@@ -98,11 +103,10 @@ export interface ApplicationData {
 }
 
 // ---------------------------
-// 🏪 ZUSTAND STORE
+// 🏪 ZUSTAND STORE
 // ---------------------------
 
 interface ApplicationState {
-  // STATE FIELDS
   applicationData: ApplicationData | null;
   degree: string | undefined;
   primaryMajor: number | undefined;
@@ -113,21 +117,16 @@ interface ApplicationState {
   awardInfos: AwardInfo[];
   clientId: number | null;
 
-  // ACTIONS
   setApplicationData: (data: ApplicationData | null) => void;
   setDegree: (degree: string | undefined) => void;
   setPrimaryMajor: (major: number | undefined) => void;
   setAdditionalMajors: (majors: number[]) => void;
   setGeneralInformation: (data: GeneralInformationForm) => void;
   setGuardians: (
-    data:
-      | GuardianWithFiles[]
-      | ((prev: GuardianWithFiles[]) => GuardianWithFiles[])
+    data: GuardianWithFiles[] | ((prev: GuardianWithFiles[]) => GuardianWithFiles[])
   ) => void;
   setEducationInfos: (
-    data:
-      | EducationInformation[]
-      | ((prev: EducationInformation[]) => EducationInformation[])
+    data: EducationInformation[] | ((prev: EducationInformation[]) => EducationInformation[])
   ) => void;
   setAwardInfos: (
     data: AwardInfo[] | ((prev: AwardInfo[]) => AwardInfo[])
@@ -136,7 +135,6 @@ interface ApplicationState {
   resetAll: () => void;
 }
 
-// Factories for blank entries
 const createBlankGuardian = (relation: string): GuardianWithFiles => ({
   relation,
   first_name: '',
@@ -148,7 +146,6 @@ const createBlankGuardian = (relation: string): GuardianWithFiles => ({
   address: '',
   work_place: '',
   documents: [],
-  filePaths: [],
   isDeceased: null,
 });
 
@@ -156,9 +153,7 @@ const createBlankEducationInfo = (): EducationInformation => ({
   name: '',
   school_gpa: null,
   graduated_year: 0,
-  files: [],
-  filePaths: [],
-
+  certificates: [],
   isUploading: false,
 });
 
@@ -166,15 +161,10 @@ const createBlankAwardInfo = (): AwardInfo => ({
   type: null,
   description: '',
   files: [],
-  filePaths: [],
-  selectedFile: null,
   isUploading: false,
 });
 
 export const useApplicationStore = create<ApplicationState>((set) => ({
-  // ---------------------------
-  // DEFAULT STATE
-  // ---------------------------
   applicationData: null,
   degree: undefined,
   primaryMajor: undefined,
@@ -198,45 +188,57 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   awardInfos: [createBlankAwardInfo()],
   clientId: null,
 
-  // ---------------------------
-  // ACTION IMPLEMENTATIONS
-  // ---------------------------
-  setApplicationData: (data) => set({ applicationData: data }),
+  setApplicationData: (data) => set(state => ({
+    ...state,
+    applicationData: data,
+    degree: data?.degree,
+    primaryMajor: data?.primary_major,
+    additionalMajors: data?.admission_major,
+    educationInfos: data?.institutions?.map((inst: any) => ({
+      id: inst.id,
+      name: inst.name,
+      school_gpa: inst.school_gpa,
+      graduated_year: inst.graduated_year,
+      certificates: inst.certificates || [],
+      isUploading: false
+    })) || [createBlankEducationInfo()],
+    awardInfos: data?.olympics?.map((olympic: any) => ({
+      id: olympic.id,
+      type: olympic.type,
+      description: olympic.description,
+      files: olympic.files || [],
+      isUploading: false
+    })) || [createBlankAwardInfo()]
+  })),
+  
   setDegree: (degree) => set({ degree }),
   setPrimaryMajor: (major) => set({ primaryMajor: major }),
   setAdditionalMajors: (majors) => set({ additionalMajors: majors }),
   setGeneralInformation: (data) => set({ generalInformation: data }),
 
-  // Guardians supports updater fn
   setGuardians: (dataOrUpdater) =>
     set((state) => ({
-      guardians:
-        typeof dataOrUpdater === 'function'
-          ? dataOrUpdater(state.guardians)
-          : dataOrUpdater,
+      guardians: typeof dataOrUpdater === 'function'
+        ? dataOrUpdater(state.guardians)
+        : dataOrUpdater,
     })),
 
-  // EducationInfos supports updater fn
   setEducationInfos: (dataOrUpdater) =>
     set((state) => ({
-      educationInfos:
-        typeof dataOrUpdater === 'function'
-          ? dataOrUpdater(state.educationInfos)
-          : dataOrUpdater,
+      educationInfos: typeof dataOrUpdater === 'function'
+        ? dataOrUpdater(state.educationInfos)
+        : dataOrUpdater,
     })),
 
-  // AwardInfos supports updater fn
   setAwardInfos: (dataOrUpdater) =>
     set((state) => ({
-      awardInfos:
-        typeof dataOrUpdater === 'function'
-          ? dataOrUpdater(state.awardInfos)
-          : dataOrUpdater,
+      awardInfos: typeof dataOrUpdater === 'function'
+        ? dataOrUpdater(state.awardInfos)
+        : dataOrUpdater,
     })),
 
   setClientId: (clientId) => set({ clientId }),
 
-  // Reset everything back to initial values
   resetAll: () =>
     set({
       applicationData: null,

@@ -132,3 +132,11 @@ export interface ITab {
     name: string;
     link: string;
 }
+
+export interface IDocument {
+  id: number;
+  year?: string;
+  text?: string;
+  description?: string;
+  attachments?: number[];
+}

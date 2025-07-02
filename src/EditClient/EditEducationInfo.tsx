@@ -1,111 +1,98 @@
-import { Input, Space, Button, message, Spin, DatePicker } from "antd";
-import { useRef, useEffect } from "react";
+import { Input, Space, Button, DatePicker, Spin } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import type { Moment } from "moment";
-
-import moment from "moment";
-
-import toast from "react-hot-toast";
-
+import React, { useRef, useEffect } from "react";
+import { useApplicationStore } from "../store/applicationStore";
 import { useSendFiles } from "../hooks/ApplicationList/useSendFiles";
+import toast, { Toaster } from "react-hot-toast";
 import TrashIcon from "../assets/icons/TrashIcon";
 import PlusIcon from "../assets/icons/PlusIcon";
 import InfoCircleIcon from "../assets/icons/InfoCircleIcon";
-import { useApplicationStore } from "../store/applicationStore";
+import type { Moment } from "moment";
+import moment from "moment";
 
 interface EducationInformation {
+  id?: number;
   name: string;
   school_gpa: number | null;
   graduated_year: number;
-  files: string[];
-  filePaths: string[];
-  isUploading: boolean;
+  certificates?: {
+    id: number;
+    name: string;
+    path: string;
+    order: number;
+  }[];
+  isUploading?: boolean;
 }
 
-type EducationInformationKey = keyof EducationInformation;
-
-const EditEducationInfo = () => {
+export default function EditEducationInfo() {
   const navigate = useNavigate();
+
+  /* ------------------------------ ZUSTAND ------------------------------ */
   const { educationInfos, setEducationInfos } = useApplicationStore();
+
+  /* ---------------------------- LOCAL REFS ----------------------------- */
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  /* ---------- HYDRATE STORE FROM SESSIONSTORAGE ---------- */
+  /* --------------------------- HYDRATE STATE --------------------------- */
   useEffect(() => {
     const cached = sessionStorage.getItem("zustandEducationInformation");
     if (cached) {
       try {
-        const parsed: EducationInformation[] = JSON.parse(cached);
-        if (parsed.length) setEducationInfos(parsed);
+        setEducationInfos(JSON.parse(cached));
       } catch {
-        /* ignore invalid json */
+        /* ignore */
       }
     }
   }, [setEducationInfos]);
 
-  /* ---------- KEEP REFS IN SYNC ---------- */
+  /* ----------------------- KEEP FILE REFS IN SYNC ---------------------- */
   useEffect(() => {
     fileInputRefs.current = Array(educationInfos.length).fill(null);
   }, [educationInfos.length]);
 
+  /* --------------------------- FILE UPLOAD ----------------------------- */
   const { mutate: uploadFile } = useSendFiles();
 
-  /* ---------- INPUT HANDLERS ---------- */
-  const handleInputChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    fieldName: EducationInformationKey
-  ) => {
-    const value = e.target.value;
-
-    if (fieldName === "school_gpa") {
-      const regex = /^[0-5]?(\.\d*)?$/;
-      if (!regex.test(value)) return;
-
-      const parsed = value === "" ? null : Number(value);
-      if (parsed !== null && parsed > 5) return;
-
-      setEducationInfos(prev => {
-        const clone = [...prev];
-        clone[index] = { ...clone[index], school_gpa: parsed };
-        return clone;
-      });
-    } else {
-      setEducationInfos(prev => {
-        const clone = [...prev];
-        clone[index] = { ...clone[index], [fieldName]: value };
-        return clone;
-      });
+  /* --------------------------- HELPERS --------------------------------- */
+  const getDisplayName = (info: EducationInformation) => {
+    if (info.certificates?.[0]?.path) {
+      return info.certificates[0].path.split("/").pop() ?? "Attach document";
     }
+    return "Attach document";
   };
 
-  const handleGraduatedYearChange = (index: number, date: Moment | null) =>
-    setEducationInfos(prev => {
-      const clone = [...prev];
-      clone[index] = { ...clone[index], graduated_year: date ? date.year() : 0 };
-      return clone;
-    });
-
-  const deleteFile = (index: number) =>
-    setEducationInfos(prev => {
-      const clone = [...prev];
-      clone[index] = { ...clone[index], files: [], filePaths: [] };
-      return clone;
-    });
-
-  /* ---------- FILE UPLOAD HANDLER ---------- */
-  const handleFileChange = (
+  /* ---------------------------- HANDLERS ------------------------------- */
+  const handleInputChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement>
+    fieldName: keyof Omit<EducationInformation, "certificates" | "isUploading">,
+    value: string | number | null
   ) => {
+    setEducationInfos(prev => {
+      const clone = [...prev];
+      // @ts-expect-error - dynamic key assignment
+      clone[index][fieldName] = value;
+      return clone;
+    });
+  };
+
+  const handleGPAChange = (index: number, value: string) => {
+    const regex = /^[0-5]?(\.\d*)?$/;
+    if (!regex.test(value)) return;
+
+    const parsed = value === "" ? null : Number(value);
+    if (parsed !== null && parsed > 5) return;
+
+    handleInputChange(index, "school_gpa", parsed);
+  };
+
+  const handleGraduatedYearChange = (index: number, date: Moment | null) => {
+    handleInputChange(index, "graduated_year", date ? date.year() : 0);
+  };
+
+  const handleFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file) return;
 
-    /* Kullanıcı dosya seçmeden pencereyi kapattıysa */
-    if (!file) {
-      message.info("Yeni dosya seçilmedi — mevcut dosya kullanılacak.");
-      return;
-    }
-
-    /* Upload başlat */
     setEducationInfos(prev => {
       const clone = [...prev];
       clone[index] = { ...clone[index], isUploading: true };
@@ -116,216 +103,204 @@ const EditEducationInfo = () => {
     formData.append("path", file);
 
     uploadFile(formData, {
-      onSuccess: data =>
+      onSuccess: (certificate) => {
         setEducationInfos(prev => {
           const clone = [...prev];
           clone[index] = {
             ...clone[index],
-            files: [data.id],          // overwrite
-            filePaths: [data.path],
-            isUploading: false,
+            certificates: [certificate],
+            isUploading: false
           };
-          message.success("File uploaded successfully");
           return clone;
-        }),
-      onError: () =>
+        });
+        toast.success("Certificate uploaded successfully");
+      },
+      onError: () => {
         setEducationInfos(prev => {
           const clone = [...prev];
           clone[index] = { ...clone[index], isUploading: false };
-          message.error("File upload failed");
           return clone;
-        }),
+        });
+        toast.error("File upload failed");
+      },
+    });
+  };
+
+  const deleteFile = (index: number) => {
+    setEducationInfos(prev => {
+      const clone = [...prev];
+      clone[index] = { ...clone[index], certificates: [] };
+      return clone;
     });
   };
 
   const handlePlusClick = (index: number) => fileInputRefs.current[index]?.click();
 
-  const handleAddEducationInfo = () =>
+  const handleAddEducationInfo = () => {
     setEducationInfos(prev => [
       ...prev,
       {
         name: "",
         school_gpa: null,
         graduated_year: 0,
-        files: [],
-        filePaths: [],
-        isUploading: false,
-      },
+        certificates: [],
+        isUploading: false
+      }
     ]);
+  };
 
-  const handleDeleteEducationInfo = (index: number) =>
+  const handleDeleteEducationInfo = (index: number) => {
+    if (educationInfos.length <= 1) {
+      toast.error("You must have at least one education entry");
+      return;
+    }
     setEducationInfos(prev => prev.filter((_, i) => i !== index));
+  };
 
-  /* ---------- SUBMIT ---------- */
   const handleSubmit = () => {
     for (const info of educationInfos) {
-      if (!info.name) return toast.error("School name is required");
-      if (info.school_gpa === null) return toast.error("School GPA is required");
-      if (!info.graduated_year) return toast.error("Graduation Year is required");
-      if (!info.files.length) return toast.error("Certificate is required");
+      if (!info.name.trim()) {
+        toast.error("School name is required");
+        return;
+      }
+      if (info.school_gpa === null) {
+        toast.error("School GPA is required");
+        return;
+      }
+      if (!info.graduated_year) {
+        toast.error("Graduation Year is required");
+        return;
+      }
+      if (!info.certificates?.length) {
+        toast.error("Certificate is required");
+        return;
+      }
     }
 
-    /* ➜ SessionStorage’e kaydet */
     sessionStorage.setItem(
       "zustandEducationInformation",
       JSON.stringify(educationInfos)
     );
-
-    /* ➜ Konsola yazdır */
-    console.log("Saved educationInfos:", educationInfos);
-    console.log(
-      "SessionStorage value:",
-      sessionStorage.getItem("zustandEducationInformation")
-    );
-
     navigate("/infos/edit-awards-info");
   };
 
-  const setFileInputRef = (index: number, el: HTMLInputElement | null) => {
-    fileInputRefs.current[index] = el;
-  };
-
-  /* ---------- RENDER ---------- */
+  /* ----------------------------- RENDER -------------------------------- */
   return (
     <div className="pt-10 px-4 pb-10">
+      <Toaster />
       <Space direction="vertical" size="middle" className="w-full">
-        {educationInfos.map((educationInfo, index) => {
-          const fileName =
-            educationInfo.filePaths[0]?.split("/").pop() ?? "Attach document";
+        <div className="mb-14">
+          <h1 className="text-headerBlue text-[14px] font-[500] mb-4">Education Information</h1>
 
-          return (
-            <div key={index} className="mb-14">
-              <h1 className="mb-4 text-headerBlue text-[14px] font-[500]">
-                {index === 0
-                  ? "School Graduation Information"
-                  : "Other Graduation Information"}
-              </h1>
-
+          {educationInfos.map((info, index) => (
+            <div key={index} className="rounded mb-6">
               {/* School Name */}
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
-                <label className="w-44 text-[14px]">School Name</label>
+                <label className="w-44 font-[400] text-[14px] self-center">School Name</label>
                 <Input
                   placeholder="Enter School Name"
-                  className="rounded-md w-[400px] h-[40px] border-[#DFE5EF]"
-                  value={educationInfo.name}
-                  onChange={e => handleInputChange(index, e, "name")}
+                  className="rounded-md w-[400px] h-[40px] border-[#DFE5EF] text-[14px]"
+                  value={info.name}
+                  onChange={e => handleInputChange(index, "name", e.target.value)}
                 />
               </div>
 
               {/* School GPA */}
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
-                <label className="w-44 text-[14px]">School GPA</label>
+                <label className="w-44 font-[400] text-[14px] self-center">School GPA</label>
                 <Input
-                  type="number"
-                  placeholder={
-                    educationInfo.school_gpa === null ? "Enter School GPA" : ""
-                  }
-                  className="rounded-md w-[400px] h-[40px] border-[#DFE5EF]"
-                  value={educationInfo.school_gpa ?? ""}
-                  onChange={e => handleInputChange(index, e, "school_gpa")}
-                  max={5}
-                  step="0.1"
+                  type="text"
+                  placeholder="Enter School GPA (0-5)"
+                  className="rounded-md w-[400px] h-[40px] border-[#DFE5EF] text-[14px]"
+                  value={info.school_gpa ?? ""}
+                  onChange={e => handleGPAChange(index, e.target.value)}
                 />
               </div>
 
               {/* Graduated Year */}
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
-                <label className="w-44 text-[14px]">Graduated year</label>
+                <label className="w-44 font-[400] text-[14px] self-center">Graduated Year</label>
                 <DatePicker
                   picker="year"
-                  className="w-[400px] h-[40px] border-[#DFE5EF] rounded-md"
-                  value={
-                    educationInfo.graduated_year
-                      ? moment(String(educationInfo.graduated_year), "YYYY")
-                      : null
-                  }
+                  className="rounded-md w-[400px] h-[40px] border-[#DFE5EF] text-[14px]"
+                  value={info.graduated_year ? moment(String(info.graduated_year), "YYYY") : null}
                   onChange={date => handleGraduatedYearChange(index, date)}
                   placeholder="Select Year"
                 />
               </div>
 
-              {/* Certificate of graduation */}
+              {/* Certificate */}
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
-                <label className="w-44 text-[14px]">Certificate of graduation</label>
-
-                <div className="flex items-center space-x-2">
+                <label className="w-44 font-[400] text-[14px] self-center">Certificate</label>
+                <div className="flex items-center justify-center space-x-2">
                   <Button
                     type="text"
-                    className="cursor-pointer border-[#DFE5EF] rounded-md w-[400px] h-[40px] flex items-center justify-center"
-                    onClick={() => fileInputRefs.current[index]?.click()}
+                    onClick={() => info.certificates?.length ? deleteFile(index) : handlePlusClick(index)}
+                    className="cursor-pointer border-[#DFE5EF] rounded-md text-[14px] w-[400px] h-[40px] flex items-center justify-center"
                   >
-                    {educationInfo.isUploading ? (
+                    {info.isUploading ? (
                       <Spin size="small" />
                     ) : (
-                      <div className="flex items-center gap-1 truncate">
-                        {fileName}
-                        {educationInfo.filePaths.length ? (
-                          <TrashIcon
-                            className="w-5 cursor-pointer"
-                            onClick={e => {
-                              e.stopPropagation();
-                              deleteFile(index);
-                            }}
-                          />
+                      <div className="flex items-center justify-center w-full gap-1">
+                        {getDisplayName(info)}
+                        {info.certificates?.length ? (
+                          <TrashIcon className="w-4" />
                         ) : (
                           <PlusIcon style={{ fontSize: "16px" }} />
                         )}
                       </div>
                     )}
                   </Button>
-
                   <input
                     type="file"
+                    ref={el => fileInputRefs.current[index] = el}
                     style={{ display: "none" }}
-                    accept="image/*,application/pdf"
                     onChange={e => handleFileChange(index, e)}
-                    ref={el => setFileInputRef(index, el)}
+                    accept="image/*,application/pdf"
                   />
-
-                  <InfoCircleIcon className="text-blue-500" />
+                  <InfoCircleIcon className="text-blue-500 hover:text-blue-700" />
                 </div>
               </div>
 
-              {/* Delete extra education info */}
-              {index > 0 && (
+              {/* Delete block if multiple */}
+              {educationInfos.length > 1 && (
                 <button
                   onClick={() => handleDeleteEducationInfo(index)}
-                  className="px-8 py-2 flex items-center gap-2 border-[#FA896B] text-[#FA896B] rounded"
+                  className="px-8 py-2 flex items-center justify-center gap-2 border-[#FA896B] border text-[#FA896B] rounded hover:text-[#FA896B] hover:border-[#FA896B] w-[200px]"
                 >
-                  Delete info <TrashIcon className="w-4" />
+                  Delete info
+                  <TrashIcon className="w-4" />
                 </button>
               )}
             </div>
-          );
-        })}
+          ))}
 
-        {/* + Add new education info */}
-        <button
-          type="button"
-          onClick={handleAddEducationInfo}
-          className="px-8 py-2 flex items-center gap-2 border-blue-500 text-blue-500 rounded"
-        >
-          <PlusIcon /> Add
-        </button>
+          {/* Add education info */}
+          <button
+            type="button"
+            onClick={handleAddEducationInfo}
+            className="px-8 py-2 flex items-center gap-2 border-blue-500 border text-blue-500 rounded"
+          >
+            <PlusIcon /> Add
+          </button>
+        </div>
 
-        {/* Navigation */}
-        <div className="flex justify-end mt-12 space-x-5">
+        {/* Navigation buttons */}
+        <div className="flex justify-end mt-10 space-x-5">
           <Link
             to="/infos/edit-guardians-info"
-            className="text-textSecondary border border-[#DFE5EF] py-2 px-4 rounded hover:bg-primaryBlue hover:text-white"
+            className="text-textSecondary bg-white border border-[#DFE5EF] hover:bg-primaryBlue hover:text-white py-2 px-4 rounded hover:transition-all hover:duration-500"
           >
             Previous
           </Link>
-          <button
+          <button 
             onClick={handleSubmit}
             className="bg-primaryBlue text-white py-2 px-4 rounded"
           >
-            Next
+            Save & Continue
           </button>
         </div>
       </Space>
     </div>
   );
-};
-
-export default EditEducationInfo;
+}

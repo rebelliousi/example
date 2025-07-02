@@ -104,7 +104,7 @@ export const useEditClient = () => {
   return useMutation<any, Error, MutationVariables>({
     mutationFn: async ({ id, data }: MutationVariables) => {
       try {
-        const response = await api.put(`/admission/client/${id}/`, data);
+        const response = await api.put(`/admission/application/${id}/`, data);
         return response.data;
       } catch (error: any) {
         console.error("Error updating client:", error);
@@ -113,8 +113,7 @@ export const useEditClient = () => {
     },
     onSuccess: () => {
       // Invalidate relevant queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ["client"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] }); // Invalidate list query too. Adjust if necessary.
+      queryClient.invalidateQueries({ queryKey: ["application"] });
     },
     onError: (error: Error) => {
       console.error("Failed to update client", error);

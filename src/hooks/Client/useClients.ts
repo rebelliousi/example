@@ -35,7 +35,7 @@ const getClients = async (page: number): Promise<PaginatedResponse<Client>> => {
 
 export const useClients = (page: number) => {
   return useQuery<PaginatedResponse<Client>, Error>({
-    queryKey: ['clients', page],
+    queryKey: ['application', page],
     queryFn: () => getClients(page),
     
   });

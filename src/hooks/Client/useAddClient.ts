@@ -100,7 +100,7 @@ export const useAddClient = () => {
 
   return useMutation<AddClientResponse, Error, IClient>({  // Specify types for mutationFn response, error, and variables.
     mutationFn: async (newApplication: IClient) => {
-      const response = await api.post<AddClientResponse>('/admission/client/', newApplication);  // Type the api.post response
+      const response = await api.post<AddClientResponse>('/admission/application/', newApplication);  // Type the api.post response
        console.log('response:',response)
       return response.data;
      

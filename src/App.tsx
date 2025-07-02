@@ -13,7 +13,7 @@ import ApplicationListPage from './pages/ApplicationLIst/ApplicationLIstPage';
 import AddApplicationPage from './pages/ApplicationLIst/AddApplicationList';
 import Dashboard from './pages/Dashboard/Dashboard';
 import EditApplicationForm from './pages/ApplicationLIst/EditApplicationList';
-import ApplicationDetailPage from './pages/ApplicationLIst/ApplicationDetailPage';
+import ApplicationDetailPage from './pages/ApplicationDetail/DetailApplication';
 import InformationRoutes from './components/Routes/InformationRoutes';
 
 const App: React.FC = () => {

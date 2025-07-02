@@ -55,13 +55,16 @@ const ApplicationDetails: React.FC = () => {
         return <p>Application ID not found in URL.</p>;
     }
 
-    const { data: applicationData, isLoading } = useApplicationById(id);
+    const { data: applicationData, isLoading, error } = useApplicationById(id); // Include error
     const [application, setApplication] = useState<IApplicationWithFiles | null>(null);
 
     const { data: areas } = useArea();
     const { data: majors } = useAdmissionMajor(1);
 
     useEffect(() => {
+        // Log the raw applicationData from the hook
+        console.log("Raw applicationData from useApplicationById:", applicationData);
+
         if (applicationData) {
             const initialApplicationState: IApplicationWithFiles = {
                 primary_major: applicationData.primary_major,
@@ -139,6 +142,11 @@ const ApplicationDetails: React.FC = () => {
         }
     }, [applicationData]);
 
+    useEffect(() => {
+        // Log the final application state that is used for rendering
+        console.log("Final application state:", application);
+    }, [application]);
+
     const formatDateForInput = (dateString: string): moment.Moment | null => {
         if (!dateString) return null;
         return moment(dateString, 'DD.MM.YYYY');
@@ -183,8 +191,17 @@ const ApplicationDetails: React.FC = () => {
     });
 };
 
-    if (isLoading || !application) {
+     if (isLoading) {
         return <div><LoadingIndicator /></div>;
+    }
+
+    if (error) {
+        console.error("Error fetching application data:", error); // Log the error
+        return <p>Error fetching application data.</p>; // Display an error message
+    }
+
+    if (!application) {
+        return <p>No application data available.</p>; // Or a more informative message
     }
 
     return (

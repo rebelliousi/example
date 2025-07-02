@@ -1,15 +1,12 @@
 import { FC, useCallback } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useModalStore } from '../../store/modal';
-
-
 import PencilIcon from '../../assets/icons/PencilIcon';
 import TrashIcon from '../../assets/icons/TrashIcon';
 import { IApplication } from '../../hooks/ApplicationList/useApplicationLists';
 import { useDeleteApplicationById } from '../../hooks/ApplicationList/useDeleteApplicationList';
 import { useApplicationById } from '../../hooks/ApplicationList/useApplicationListById';
 import { useApplicationStore } from '../../store/applicationStore';
-
 
 interface ApplicationListItemProps {
   application: IApplication;
@@ -20,8 +17,8 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   const { mutate } = useDeleteApplicationById();
   const { setOpen, setStatus, setOnSubmit } = useModalStore();
   const navigate = useNavigate();
-  const { setApplicationData } = useApplicationStore(); // Zustand'dan sadece set fonksiyonunu al
-  const { data: detailedApplicationData, refetch } = useApplicationById(String(application.id)); // useApplicationById hook'unu kullan
+  const { setApplicationData } = useApplicationStore();
+  const { data: detailedApplicationData, refetch } = useApplicationById(String(application.id));
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -41,17 +38,23 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
     navigate(`/application_list/detail/${application.id}`);
   }, [application, navigate]);
 
-  const handleEdit = useCallback(() => {
-    // Düzenleme sayfasına göndermeden önce useApplicationById ile verileri çek ve Zustand'a gönder
-    refetch().then(() => { // refetch ile verileri güncel olarak çek
+  const handleEdit = useCallback(async () => {
+    try {
+      console.log("handleEdit çağrıldı, application.id:", application.id); // 1
+      console.log("refetch öncesi detailedApplicationData:", detailedApplicationData); // 2
+      await refetch();
+      console.log("refetch sonrası detailedApplicationData:", detailedApplicationData); // 3
+
       if (detailedApplicationData) {
-        setApplicationData(detailedApplicationData); // useApplicationById'den gelen verileri Zustand'a gönder
-        navigate('/infos/edit-degree-information'); // Düzenleme sayfasına yönlendir
+        console.log("Zustand'a gönderilen veri:", detailedApplicationData); // 4
+        setApplicationData(detailedApplicationData);
+        navigate('/infos/edit-degree-information');
       } else {
         console.error("Başvuru verileri yüklenirken bir hata oluştu.");
-        // Hata durumunda kullanıcıya bir mesaj gösterebilirsiniz.
       }
-    });
+    } catch (error) {
+      console.error("Veri çekme veya güncelleme sırasında bir hata oluştu:", error);
+    }
   }, [application.id, navigate, setApplicationData, detailedApplicationData, refetch]);
 
   return (
@@ -83,10 +86,10 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
         <Link
-          to={'#'} // Geçici olarak # yapıldı, onClick ile yönlendirme yapılacak
+          to={'#'}
           onClick={(e) => {
             e.stopPropagation();
-            handleEdit(); // Yeni fonksiyonu çağır
+            handleEdit();
           }}
         >
           <PencilIcon size={16} />

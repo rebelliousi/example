@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Space, Button, message, Spin, Select } from "antd"; //Import select
+import { Space, Button, Spin } from "antd"; //Import select
 import InfoCircleIcon from "../../assets/icons/InfoCircleIcon";
 import { Link, useNavigate } from "react-router-dom";
 import PlusIcon from "../../assets/icons/PlusIcon";
@@ -269,7 +269,11 @@ const OtherDocuments = () => {
 
         // API call
         try {
-            await addClient(clientData);
+            const response = await addClient(clientData);
+
+            //** ADD THIS LOG **//
+            console.log("API Response:", response);
+
             toast.success('Application submitted');
 
             // *** Benzersiz bir tanımlayıcı ile sessionStorage'a kaydet ***
@@ -286,6 +290,8 @@ const OtherDocuments = () => {
 
             navigate("/application_list");
         } catch (error: any) {
+            // ** AND ADD THIS LOG **//
+            console.error("API Error:", error);
             toast.error('An error occurred while submitting');
             console.error("Error", error);
         }
