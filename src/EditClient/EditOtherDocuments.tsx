@@ -34,11 +34,29 @@ interface GuardianDocument {
   file: { id: number } | string | number;
 }
 
+interface Document {
+  type: DocumentType;
+  file?: {
+    id?: number;
+    path?: string;
+  };
+}
+
+interface User {
+  documents?: Document[];
+}
+
+interface ApplicationData {
+  user?: User;
+  id?: string;
+  status?: string;
+}
+
 /* ---------- DOC‑TYPE ↔ FIELD MAPPING ---------- */
 const docTypeToField: Record<DocumentType, FileFieldName | undefined> = {
   medical_record: "saglykKepilnama",
   relationship_tree: "threeArka",
-  information: undefined, // iki farklı alan – altta kontrol ediyoruz
+  information: undefined,
   terjiimehal: "terjimehal",
   military_document: "militaryService",
   nika_haty: "nikaHaty",
@@ -78,6 +96,7 @@ const EditOtherDocuments: React.FC = () => {
   /* ---------- STATE ---------- */
   const [fileIds, setFileIds] = useState<{ [key in FileFieldName]?: number | null }>({});
   const [gender, setGender] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [files, setFiles] = useState<{ [key in FileFieldName]?: FileState }>({
     saglykKepilnama: {
       type: "medical_record",
@@ -135,13 +154,16 @@ const EditOtherDocuments: React.FC = () => {
 
   /* ---------- HYDRATE MEVCUT DOSYALAR ---------- */
   useEffect(() => {
-    if (!applicationData?.user?.documents?.length) return;
+    if (!applicationData?.user?.documents) {
+      setIsLoading(false);
+      return;
+    }
 
     let infoSeen = 0;
     setFiles(prev => {
       const next = { ...prev };
-      applicationData.user.documents.forEach((doc: any) => {
-        let field = docTypeToField[doc.type as DocumentType];
+      applicationData.user?.documents?.forEach((doc: Document) => {
+        let field = docTypeToField[doc.type];
         if (doc.type === "information") {
           field = infoSeen === 0 ? "maglumat" : "threeXFourSurat";
           infoSeen += 1;
@@ -161,8 +183,8 @@ const EditOtherDocuments: React.FC = () => {
     setFileIds(prev => {
       const ids = { ...prev };
       infoSeen = 0;
-      applicationData.user.documents.forEach((doc: any) => {
-        let field = docTypeToField[doc.type as DocumentType];
+      applicationData.user?.documents?.forEach((doc: Document) => {
+        let field = docTypeToField[doc.type];
         if (doc.type === "information") {
           field = infoSeen === 0 ? "maglumat" : "threeXFourSurat";
           infoSeen += 1;
@@ -171,6 +193,7 @@ const EditOtherDocuments: React.FC = () => {
       });
       return ids;
     });
+    setIsLoading(false);
   }, [applicationData]);
 
   /* ---------- GENDER ---------- */
@@ -282,25 +305,25 @@ const EditOtherDocuments: React.FC = () => {
     // 2️⃣ Degree info stored in session
     const degreeData = JSON.parse(sessionStorage.getItem("zustandDegree") || "null");
 
-    // 3️⃣ Clean & transform helpers ------------------------------------
-    const cleanedEducationInfos = educationInfos.map(edu => ({
+    // 3️⃣ Clean & transform helpers
+    const cleanedEducationInfos = educationInfos?.map(edu => ({
       name: edu.name,
       school_gpa: edu.school_gpa,
       graduated_year: edu.graduated_year,
       certificates: edu.files
-        .map(pickFileId)
-        .filter((id): id is number => id !== null),
-    }));
+        ?.map(pickFileId)
+        .filter((id): id is number => id !== null) || [],
+    })) || [];
 
-    const cleanedAwardInfos = awardInfos.map(aw => ({
+    const cleanedAwardInfos = awardInfos?.map(aw => ({
       type: aw.type,
       description: aw.description,
       files: aw.files
-        .map(pickFileId)
-        .filter((id): id is number => id !== null),
-    }));
+        ?.map(pickFileId)
+        .filter((id): id is number => id !== null) || [],
+    })) || [];
 
-    const cleanedGuardians = guardians.map(g => ({
+    const cleanedGuardians = guardians?.map(g => ({
       relation: g.relation,
       first_name: g.first_name,
       last_name: g.last_name,
@@ -310,20 +333,20 @@ const EditOtherDocuments: React.FC = () => {
       phone: g.phone,
       address: g.address,
       work_place: g.work_place,
-      documents: g.documents.map<GuardianDocument>(d => ({
+      documents: g.documents?.map<GuardianDocument>(d => ({
         type: d.type,
         file: pickFileId(d.file)!,
-      })),
-    }));
+      })) || [],
+    })) || [];
 
-    // 4️⃣ Build payload -----------------------------------------------
+    // 4️⃣ Build payload
     const clientData = {
       degree: degreeData?.degree,
       primary_major: degreeData?.primaryMajor,
       admission_major: degreeData?.additionalMajors || [],
       user: {
         ...generalInformation,
-        date_of_birth: formatDate(moment(generalInformation.date_of_birth, "YYYY-MM-DD")),
+        date_of_birth: formatDate(moment(generalInformation?.date_of_birth, "YYYY-MM-DD")),
       },
       guardians: cleanedGuardians,
       institutions: cleanedEducationInfos,
@@ -334,17 +357,17 @@ const EditOtherDocuments: React.FC = () => {
         { type: "information", file: fileIds.maglumat },
         { type: "terjiimehal", file: fileIds.terjimehal },
         { type: "information", file: fileIds.threeXFourSurat },
-        ...(gender !== "female"
+        ...(gender !== "female" && fileIds.militaryService
           ? [{ type: "military_document", file: fileIds.militaryService }]
           : []),
         ...(fileIds.nikaHaty ? [{ type: "nika_haty", file: fileIds.nikaHaty }] : []),
-      ],
+      ].filter(doc => doc.file !== null && doc.file !== undefined),
       status: applicationData?.status,
     };
 
     console.log("clientData (pretty):", JSON.stringify(clientData, null, 2));
 
-    // 5️⃣ Fire request -----------------------------------------------
+    // 5️⃣ Fire request
     try {
       if (applicationData?.id) {
         await editClientMutation.mutateAsync({ id: applicationData.id, data: clientData });
@@ -422,6 +445,10 @@ const EditOtherDocuments: React.FC = () => {
   };
 
   /* ---------- RENDER ---------- */
+  if (isLoading) {
+    return <Spin size="large" className="flex justify-center mt-10" />;
+  }
+
   return (
     <div className="pt-10 px-4 pb-10">
       <Space direction="vertical" size="middle" className="w-full">

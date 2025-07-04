@@ -115,13 +115,14 @@ export default function EditEducationInfo() {
         });
         toast.success("Certificate uploaded successfully");
       },
-      onError: () => {
+      onError: (error: any) => {  // Added type any to error
         setEducationInfos(prev => {
           const clone = [...prev];
           clone[index] = { ...clone[index], isUploading: false };
           return clone;
         });
-        toast.error("File upload failed");
+        console.error("File upload failed:", error); // Log the error
+        toast.error(`File upload failed: ${error?.message || 'Unknown error'}`); // Show error to user
       },
     });
   };
@@ -293,7 +294,7 @@ export default function EditEducationInfo() {
           >
             Previous
           </Link>
-          <button 
+          <button
             onClick={handleSubmit}
             className="bg-primaryBlue text-white py-2 px-4 rounded"
           >

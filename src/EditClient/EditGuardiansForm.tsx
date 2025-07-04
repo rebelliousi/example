@@ -27,19 +27,17 @@ interface GuardianWithFiles {
     documents: { type: DocumentType; file: string; path: string }[];
     filePaths: string[];
     isDeceased?: boolean | null;
+    originalIndex?: number;
 }
 
 const EditGuardianForm = () => {
-    // Zustand'dan guardians ve setGuardians'ı al
     const { guardians, setGuardians, applicationData } = useApplicationStore();
-
     const [uploadingStates, setUploadingStates] = useState<boolean[]>(guardians.map(() => false));
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const deathCertificateInputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const { mutate: uploadFile, isPending: isFileUploadLoadingGlobal } = useSendFiles();
     const navigate = useNavigate();
-
-    const [reorderedGuardians, setReorderedGuardians] = useState<GuardianWithFiles[]>([]); // **EKLE**
+    const [reorderedGuardians, setReorderedGuardians] = useState<(GuardianWithFiles & { originalIndex: number })[]>([]);
 
     useEffect(() => {
         fileInputRefs.current = fileInputRefs.current.slice(0, guardians.length);
@@ -54,7 +52,6 @@ const EditGuardianForm = () => {
     }, [guardians.length]);
 
     useEffect(() => {
-        // Uygulama verisi yüklendiğinde, Zustand store'daki guardians'ı güncelle
         if (applicationData && applicationData.user && applicationData.user.guardians) {
             const formattedGuardians = applicationData.user.guardians.map((guardian: any) => {
                 const hasDeathCertificate = guardian.documents.some((doc: any) => doc.type === 'death_certificate');
@@ -71,7 +68,7 @@ const EditGuardianForm = () => {
                     address: guardian.address,
                     work_place: guardian.work_place,
                     documents: guardian.documents.map((doc: any) => ({
-                        type: doc.type as DocumentType, // Tür dönüşümü burada
+                        type: doc.type as DocumentType,
                         file: doc.file.id,
                         path: doc.file.path,
                     })),
@@ -82,28 +79,28 @@ const EditGuardianForm = () => {
             setGuardians(formattedGuardians);
         }
     }, [applicationData, setGuardians]);
+
     useEffect(() => {
-        // Sıralamayı burada yap
         const father = guardians.find(g => g.relation === 'father');
         const mother = guardians.find(g => g.relation === 'mother');
         const others = guardians.filter(g => g.relation !== 'father' && g.relation !== 'mother');
-
+        
         const ordered = [];
-        if (father) ordered.push(father);
-        if (mother) ordered.push(mother);
-        setReorderedGuardians([...ordered, ...others]);
+        if (father) ordered.push({ ...father, originalIndex: guardians.indexOf(father) });
+        if (mother) ordered.push({ ...mother, originalIndex: guardians.indexOf(mother) });
+        ordered.push(...others.map(g => ({ ...g, originalIndex: guardians.indexOf(g) })));
+        
+        setReorderedGuardians(ordered);
     }, [guardians]);
 
     const handleGuardianChange = (index: number, name: string, value: any) => {
-        const newGuardians = [...guardians];
-        newGuardians[index] = {
-            ...newGuardians[index],
-            [name]: value,
-        };
+        const newGuardians = guardians.map((g, i) => 
+            i === index ? { ...g, [name]: value } : g
+        );
         setGuardians(newGuardians);
     };
 
-    const handleFileUpload = async (index: number, file: File | null, documentType: DocumentType, isDeathCertificate: boolean = false) => {
+    const handleFileUpload = async (index: number, file: File | null, documentType: DocumentType) => {
         if (!file) {
             toast.error('Please select a file.');
             return;
@@ -120,16 +117,17 @@ const EditGuardianForm = () => {
 
         uploadFile(formData, {
             onSuccess: (data: any) => {
-                const newGuardians = [...guardians];
-                newGuardians[index] = {
-                    ...newGuardians[index],
-                    documents: [...newGuardians[index].documents, {
-                        type: documentType,
-                        file: data.id,
-                        path: data.path
-                    }],
-                    filePaths: [...newGuardians[index].filePaths, data.path]
-                };
+                const newGuardians = guardians.map((g, i) => 
+                    i === index ? {
+                        ...g,
+                        documents: [...g.documents, {
+                            type: documentType,
+                            file: data.id,
+                            path: data.path
+                        }],
+                        filePaths: [...g.filePaths, data.path]
+                    } : g
+                );
                 setGuardians(newGuardians);
                 toast.success('File uploaded successfully');
             },
@@ -157,19 +155,19 @@ const EditGuardianForm = () => {
     const handleDeathCertificateChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files && event.target.files[0];
         if (file) {
-            handleFileUpload(index, file, 'death_certificate', true);
+            handleFileUpload(index, file, 'death_certificate');
         }
     };
 
-    const handlePlusClick = (index: number) => {
-        if (fileInputRefs.current[index]) {
-            fileInputRefs.current[index]!.click();
-        }
-    };
-
-    const handleDeathCertificatePlusClick = (index: number) => {
-        if (deathCertificateInputRefs.current[index]) {
-            deathCertificateInputRefs.current[index]!.click();
+    const handlePlusClick = (index: number, isDeathCertificate: boolean = false) => {
+        if (isDeathCertificate) {
+            if (deathCertificateInputRefs.current[index]) {
+                deathCertificateInputRefs.current[index]!.click();
+            }
+        } else {
+            if (fileInputRefs.current[index]) {
+                fileInputRefs.current[index]!.click();
+            }
         }
     };
 
@@ -204,53 +202,41 @@ const EditGuardianForm = () => {
     };
 
     const removeItem = (index: number) => {
-        const newItems = [...guardians];
-        newItems.splice(index, 1);
+        const newItems = guardians.filter((_, i) => i !== index);
         setGuardians(newItems);
 
-        const newStates = [...uploadingStates];
-        newStates.splice(index, 1);
+        const newStates = uploadingStates.filter((_, i) => i !== index);
         setUploadingStates(newStates);
     };
 
     const handleSubmit = () => {
-        // Phone Number Validation
         const phoneRegex = /^\+993\d{8}$/;
 
-        // Form doğrulama işlemleri
         for (let i = 0; i < guardians.length; i++) {
             const guardian = guardians[i];
 
             if (!guardian.first_name || !guardian.last_name || !guardian.father_name || !guardian.date_of_birth || !guardian.place_of_birth) {
-                toast.error(`Please fill in all required fields .`);
+                toast.error(`Please fill in all required fields for guardian ${i + 1}.`);
                 return;
             }
 
-            // Sadece hayatta olan gardiyanlar için adres, iletişim ve pasaport bilgisi zorunlu
             if ((guardian.isDeceased === null || guardian.isDeceased === false) && (!guardian.address || !guardian.phone || !guardian.work_place || guardian.documents.length === 0)) {
-                toast.error(`Please fill in  required address, contact and passport information .`);
+                toast.error(`Please fill in required address, contact and passport information for guardian ${i + 1}.`);
                 return;
             }
 
-            // Ölen gardiyanlar için ölüm belgesi zorunlu
             if (guardian.isDeceased === true && guardian.documents.length === 0) {
-                toast.error(`Please fill in  required death certificate information .`);
+                toast.error(`Please upload death certificate for guardian ${i + 1}.`);
                 return;
             }
 
-            // Telefon numarası doğrulaması
-            if ((guardian.isDeceased === null || guardian.isDeceased === false) && !guardian.phone) {
-                toast.error(`Phone Number is required for Guardian ${i + 1}.`);
-                return;
-            } else if ((guardian.isDeceased === null || guardian.isDeceased === false) && !phoneRegex.test(guardian.phone)) {
-                toast.error(`Phone Number must start with +993 and contain 8 digits .`);
+            if ((guardian.isDeceased === null || guardian.isDeceased === false) && !phoneRegex.test(guardian.phone)) {
+                toast.error(`Phone Number must start with +993 and contain 8 digits for guardian ${i + 1}.`);
                 return;
             }
         }
 
-        //Verileri SessionStorage'ye kaydetme
         sessionStorage.setItem('zustandGuardians', JSON.stringify(guardians));
-
         navigate("/infos/edit-education-info");
     };
 
@@ -267,35 +253,62 @@ const EditGuardianForm = () => {
     };
 
     const handleDeceasedChange = (index: number, value: boolean | null) => {
-        const newGuardians = [...guardians];
-        newGuardians[index] = {
-            ...newGuardians[index],
-            isDeceased: value,
-        };
+        const newGuardians = guardians.map((g, i) => {
+            if (i === index) {
+                let documents = [...g.documents];
+                
+                // If "Yes" is selected (Deceased)
+                if (value === true) {
+                    // Remove passport
+                    documents = documents.filter(doc => doc.type !== 'passport');
+                    toast.success('Passport removed automatically for deceased guardian');
+                } 
+                // If "No" is selected (Alive)
+                else if (value === false) {
+                    // Remove death certificate
+                    documents = documents.filter(doc => doc.type !== 'death_certificate');
+                    toast.success('Death certificate removed automatically for living guardian');
+                }
+                // If cleared (null) both can remain
+                
+                return {
+                    ...g,
+                    isDeceased: value,
+                    documents,
+                    filePaths: documents.map(doc => doc.path)
+                };
+            }
+            return g;
+        });
         setGuardians(newGuardians);
     };
 
     const deleteFile = (index: number, isDeathCertificate: boolean = false) => {
-        const newGuardians = [...guardians];
-        const guardianToUpdate = { ...newGuardians[index] };
-
-        const documentTypeToDelete: DocumentType = isDeathCertificate ? 'death_certificate' : 'passport';
-
-        guardianToUpdate.documents = guardianToUpdate.documents.filter(doc => doc.type !== documentTypeToDelete);
-        guardianToUpdate.filePaths = guardianToUpdate.filePaths.filter((path, i) => guardianToUpdate.documents[i].type !== documentTypeToDelete);
-
-        newGuardians[index] = guardianToUpdate;
+        const newGuardians = guardians.map((g, i) => {
+            if (i === index) {
+                const documentTypeToDelete = isDeathCertificate ? 'death_certificate' : 'passport';
+                const updatedDocuments = g.documents.filter(doc => doc.type !== documentTypeToDelete);
+                return {
+                    ...g,
+                    documents: updatedDocuments,
+                    filePaths: updatedDocuments.map(doc => doc.path)
+                };
+            }
+            return g;
+        });
         setGuardians(newGuardians);
         toast.success('File deleted successfully');
     };
 
-    const renderGuardianForm = (guardian: GuardianWithFiles, index: number, isOtherGuardian: boolean = false) => {
+    const renderGuardianForm = (guardian: GuardianWithFiles & { originalIndex?: number }, index: number, isOtherGuardian: boolean = false) => {
         const handleDateChange = (date: Moment | null) => {
             handleGuardianChange(index, 'date_of_birth', date ? formatDateForApi(date) : '');
         };
 
         const isPassportUploading = uploadingStates[index] === true;
         const isParent = guardian.relation === 'father' || guardian.relation === 'mother';
+        const hasPassport = guardian.documents.some(doc => doc.type === 'passport');
+        const hasDeathCertificate = guardian.documents.some(doc => doc.type === 'death_certificate');
 
         return (
             <div className="col-span-6">
@@ -318,7 +331,6 @@ const EditGuardianForm = () => {
                                 value={guardian.relation || undefined}
                                 onChange={(value) => handleGuardianChange(index, 'relation', value)}
                                 style={{ width: '100%', height: '40px' }}
-
                             >
                                 <Select.Option key={'grandparent'} value={'grandparent'}>
                                     grandparent
@@ -424,7 +436,6 @@ const EditGuardianForm = () => {
                                 value={guardian.isDeceased === null ? undefined : guardian.isDeceased}
                                 onChange={(value) => handleDeceasedChange(index, value)}
                                 allowClear
-
                             >
                                 <Select.Option value={true}>Yes</Select.Option>
                                 <Select.Option value={false}>No</Select.Option>
@@ -466,7 +477,6 @@ const EditGuardianForm = () => {
                                     className="w-[400px] h-[40px] border-[#DFE5EF] rounded-md text-[14px]"
                                     value={guardian.phone}
                                     onChange={(e) => handleGuardianChange(index, 'phone', e.target.value)}
-
                                 />
                             </Space>
                         </div>
@@ -486,30 +496,32 @@ const EditGuardianForm = () => {
                             </Space>
                         </div>
 
-                        {/* Passport Upload */}
                         <div className="flex sm:flex-row items-start gap-4 mb-4">
                             <label className="w-44 font-[400] text-[14px] self-center">
                                 Passport
                             </label>
-                            <div className="flex w-[400px] items-center justify-between">
+                            <div className="flex w-[400px]">
                                 <Space>
-                                    <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center justify-between w-[400px]">
                                         <Button
-                                            onClick={() => {
-                                                handlePlusClick(index);
-                                            }}
+                                            onClick={() => handlePlusClick(index, false)}
                                             type="text"
                                             className="cursor-pointer border-[#DFE5EF] rounded-md text-[14px] w-full h-[40px] flex items-center justify-center"
-
                                         >
                                             {isPassportUploading ? (
                                                 <Spin size="small" />
                                             ) : (
                                                 <>
-                                                    {guardian.documents.some(doc => doc.type === 'passport') ? ( // Check if passport already uploaded
+                                                    {hasPassport ? (
                                                         <div className="flex items-center justify-between w-full">
                                                             <span>Passport uploaded</span>
-                                                            <TrashIcon className='w-5' onClick={() => deleteFile(index)} />
+                                                            <TrashIcon
+                                                                style={{ fontSize: '16px', marginLeft: '5px' }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteFile(index, false);
+                                                                }}
+                                                            />
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center justify-center w-full gap-1">
@@ -524,61 +536,59 @@ const EditGuardianForm = () => {
                                             type="file"
                                             style={{ display: "none" }}
                                             onChange={(e) => handleFileChange(index, e)}
-                                            ref={(el) => {
-                                                setFileInputRef(index, el);
-                                            }}
+                                            ref={(el) => setFileInputRef(index, el)}
                                             required
                                         />
                                     </div>
-
                                 </Space>
-                                {isOtherGuardian && (
-                                    <div className="flex items-center ml-4">
-                                        <InfoCircleIcon className="text-blue-500 hover:text-blue-700 mr-5" />
-
-                                        <button
-
-                                            onClick={() => removeItem(index)}
-                                            className="px-8 py-2 flex items-center justify-center gap-2 border-[#FA896B] border text-[#FA896B] rounded hover:text-[#FA896B] hover:border-[#FA896B] w-[200px]"
-                                        >
-                                            Delete guardian
-                                            <TrashIcon className="w-4" />
-                                        </button>
-
-                                    </div>
-                                )}
-
+                                <div className="flex items-center ml-4">
+                                    <InfoCircleIcon className="text-blue-500 hover:text-blue-700 mr-5" />
+                                </div>
                             </div>
                         </div>
+
+                        {isOtherGuardian && (
+                            <div className="flex items-center ml-4">
+                                <InfoCircleIcon className="text-blue-500 hover:text-blue-700 mr-5" />
+                                <button
+                                    onClick={() => removeItem(index)}
+                                    className="px-8 py-2 flex items-center justify-center gap-2 border-[#FA896B] border text-[#FA896B] rounded hover:text-[#FA896B] hover:border-[#FA896B] w-[200px]"
+                                >
+                                    Delete guardian
+                                    <TrashIcon className="w-4" />
+                                </button>
+                            </div>
+                        )}
                     </>
                 ) : (
                     guardian.isDeceased === true && (
                         <>
-
-                            {/* Death Certificate Upload */}
-                            <div className="flex  sm:flex-row items-start gap-4 mb-4">
+                            <div className="flex sm:flex-row items-start gap-4 mb-4">
                                 <label className="w-44 font-[400] text-[14px] self-center">
                                     Death Certificate
                                 </label>
-                                <div className=" flex w-[400px]">
+                                <div className="flex w-[400px]">
                                     <Space>
-                                        <div className="flex items-center justify-between  w-[400px]">
+                                        <div className="flex items-center justify-between w-[400px]">
                                             <Button
-                                                onClick={() => {
-                                                    handleDeathCertificatePlusClick(index);
-                                                }}
+                                                onClick={() => handlePlusClick(index, true)}
                                                 type="text"
                                                 className="cursor-pointer border-[#DFE5EF] rounded-md text-[14px] w-full h-[40px] flex items-center justify-center"
-
                                             >
                                                 {isPassportUploading ? (
                                                     <Spin size="small" />
                                                 ) : (
                                                     <>
-                                                        {guardian.documents.some(doc => doc.type === 'death_certificate') ? (  // Check if death certificate already uploaded
+                                                        {hasDeathCertificate ? (
                                                             <div className="flex items-center justify-between w-full">
                                                                 <span>Death certificate uploaded</span>
-                                                                <TrashIcon style={{ fontSize: '16px', marginLeft: '5px' }} onClick={() => deleteFile(index, true)} />
+                                                                <TrashIcon
+                                                                    style={{ fontSize: '16px', marginLeft: '5px' }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        deleteFile(index, true);
+                                                                    }}
+                                                                />
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center justify-center w-full gap-1">
@@ -593,9 +603,7 @@ const EditGuardianForm = () => {
                                                 type="file"
                                                 style={{ display: "none" }}
                                                 onChange={(e) => handleDeathCertificateChange(index, e)}
-                                                ref={(el) => {
-                                                    setDeathCertificateInputRef(index, el);
-                                                }}
+                                                ref={(el) => setDeathCertificateInputRef(index, el)}
                                                 required
                                             />
                                         </div>
@@ -616,20 +624,14 @@ const EditGuardianForm = () => {
         <div className="pt-10 px-4 pb-10">
             <Toaster />
             <Space direction="vertical" size="middle" className="w-full">
-
-                {/* Father and Mother Forms */}
                 <div className="grid grid-cols-12 gap-28 mb-14">
-                    {/* Father's Form (First) */}
-                    {reorderedGuardians[0] && renderGuardianForm(reorderedGuardians[0], 0)}
-
-                    {/* Mother's Form (Second) */}
-                    {reorderedGuardians[1] && renderGuardianForm(reorderedGuardians[1], 1)}
+                    {reorderedGuardians[0] && renderGuardianForm(reorderedGuardians[0], reorderedGuardians[0].originalIndex)}
+                    {reorderedGuardians[1] && renderGuardianForm(reorderedGuardians[1], reorderedGuardians[1].originalIndex)}
                 </div>
 
-                {/* Other Guardians */}
-                {reorderedGuardians.slice(2).map((guardian, index) => (
-                    <div key={index + 2} className="grid grid-cols-12 gap-28 mb-14">
-                        {renderGuardianForm(guardian, index + 2, true)}
+                {reorderedGuardians.slice(2).map((guardian) => (
+                    <div key={guardian.originalIndex} className="grid grid-cols-12 gap-28 mb-14">
+                        {renderGuardianForm(guardian, guardian.originalIndex, true)}
                     </div>
                 ))}
 
@@ -644,15 +646,14 @@ const EditGuardianForm = () => {
             <div className="flex justify-end mt-12 space-x-5">
                 <Link
                     to="/infos/edit-general-information"
-                    className="text-textSecondary bg-white border  border-#DFE5EF hover:bg-primaryBlue hover:text-white py-2 px-4 rounded hover:transition-all hover:duration-500"
+                    className="text-textSecondary bg-white border border-#DFE5EF hover:bg-primaryBlue hover:text-white py-2 px-4 rounded hover:transition-all hover:duration-500"
                 >
                     Previous
                 </Link>
 
                 <button
-
                     onClick={handleSubmit}
-                    className="bg-primaryBlue hover:text-white  text-white  py-2 px-4 rounded"
+                    className="bg-primaryBlue hover:text-white text-white py-2 px-4 rounded"
                     disabled={isFileUploadLoadingGlobal}
                 >
                     Next
