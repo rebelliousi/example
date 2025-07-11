@@ -236,7 +236,8 @@ const EditGuardianForm = () => {
             }
         }
 
-        sessionStorage.setItem('zustandGuardians', JSON.stringify(guardians));
+        //sessionStorage.setItem('zustandGuardians', JSON.stringify(guardians));
+        setGuardians(guardians);
         navigate("/infos/edit-education-info");
     };
 

@@ -38,18 +38,18 @@ export default function EditAwardsInfo() {
   /* --------------------------- HYDRATE STATE --------------------------- */
   useEffect(() => {
     // 1. First try to load from sessionStorage
-    const cached = sessionStorage.getItem("zustandAwardInformation");
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) {
-          setAwardInfos(parsed);
-          return;
-        }
-      } catch (error) {
-        console.error("Error parsing cached awards:", error);
-      }
-    }
+    //const cached = sessionStorage.getItem("zustandAwardInformation");
+    //if (cached) {
+    //  try {
+    //    const parsed = JSON.parse(cached);
+    //    if (Array.isArray(parsed)) {
+    //      setAwardInfos(parsed);
+    //      return;
+    //    }
+    //  } catch (error) {
+    //    console.error("Error parsing cached awards:", error);
+    //  }
+    //}
 
     // 2. If no cached data, check applicationData from backend
     if (applicationData?.olympics) {
@@ -186,7 +186,8 @@ export default function EditAwardsInfo() {
     }
 
     // Save to sessionStorage
-    sessionStorage.setItem("zustandAwardInformation", JSON.stringify(awardInfos));
+    //sessionStorage.setItem("zustandAwardInformation", JSON.stringify(awardInfos));
+    setAwardInfos(awardInfos);
     navigate("/infos/edit-other-doc-info");
   };
 

@@ -19,6 +19,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   const navigate = useNavigate();
   const { setApplicationData } = useApplicationStore();
   const { data: detailedApplicationData, refetch } = useApplicationById(String(application.id));
+  console.log(detailedApplicationData)
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {
@@ -38,24 +39,24 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
     navigate(`/application_list/detail/${application.id}`);
   }, [application, navigate]);
 
-  const handleEdit = useCallback(async () => {
+  const handleEdit = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
-      console.log("handleEdit çağrıldı, application.id:", application.id); // 1
-      console.log("refetch öncesi detailedApplicationData:", detailedApplicationData); // 2
-      await refetch();
-      console.log("refetch sonrası detailedApplicationData:", detailedApplicationData); // 3
+      console.log("Fetching application data for:", application.id);
+      const { data: fetchedData } = await refetch();
+      console.log("Fetched data:", fetchedData);
 
-      if (detailedApplicationData) {
-        console.log("Zustand'a gönderilen veri:", detailedApplicationData); // 4
-        setApplicationData(detailedApplicationData);
+      if (fetchedData) {
+        console.log("Setting application data to store");
+        setApplicationData(fetchedData);
         navigate('/infos/edit-degree-information');
       } else {
-        console.error("Başvuru verileri yüklenirken bir hata oluştu.");
+        console.error("Application data not found after refetch");
       }
     } catch (error) {
-      console.error("Veri çekme veya güncelleme sırasında bir hata oluştu:", error);
+      console.error("Error fetching or setting application data:", error);
     }
-  }, [application.id, navigate, setApplicationData, detailedApplicationData, refetch]);
+  }, [application.id, navigate, setApplicationData, refetch]);
 
   return (
     <div
@@ -87,10 +88,8 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
       <div className="col-span-2 px-2 flex opacity-0 justify-end gap-2 group-hover:opacity-100">
         <Link
           to={'#'}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit();
-          }}
+          onClick={handleEdit}
+          className="hover:bg-actionButtonHover rounded-full p-1"
         >
           <PencilIcon size={16} />
         </Link>
@@ -100,7 +99,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
             e.stopPropagation();
             handleDelete();
           }}
-          className="hover:bg-actionButtonHover rounded-full"
+          className="hover:bg-actionButtonHover rounded-full p-1"
         >
           <TrashIcon size={16} />
         </button>

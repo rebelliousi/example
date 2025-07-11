@@ -10,8 +10,6 @@ import toast from 'react-hot-toast'; // Import react-hot-toast
 import { useArea } from "../hooks/Area/useAreas";
 import { useApplicationStore } from "../store/applicationStore";
 
-
-
 const { Option } = Select;
 
 interface ApplicationUserForm {
@@ -175,7 +173,10 @@ const EditGeneralInformationForm = () => {
         }
 
         //Verileri SessionStorage'ye kaydetme (gerekirse)
-        sessionStorage.setItem('zustandGeneralInformation', JSON.stringify(generalInformation));
+        //sessionStorage.setItem('zustandGeneralInformation', JSON.stringify(generalInformation));
+
+        // Zustand'ı güncelle
+        setGeneralInformation(generalInformation);
 
         navigate("/infos/edit-guardians-info");
     };

@@ -35,14 +35,14 @@ export default function EditEducationInfo() {
 
   /* --------------------------- HYDRATE STATE --------------------------- */
   useEffect(() => {
-    const cached = sessionStorage.getItem("zustandEducationInformation");
-    if (cached) {
-      try {
-        setEducationInfos(JSON.parse(cached));
-      } catch {
-        /* ignore */
-      }
-    }
+    //const cached = sessionStorage.getItem("zustandEducationInformation");
+    //if (cached) {
+    //  try {
+    //    setEducationInfos(JSON.parse(cached));
+    //  } catch {
+    //    /* ignore */
+    //  }
+    //}
   }, [setEducationInfos]);
 
   /* ----------------------- KEEP FILE REFS IN SYNC ---------------------- */
@@ -178,10 +178,11 @@ export default function EditEducationInfo() {
       }
     }
 
-    sessionStorage.setItem(
-      "zustandEducationInformation",
-      JSON.stringify(educationInfos)
-    );
+    //sessionStorage.setItem(
+    //  "zustandEducationInformation",
+    //  JSON.stringify(educationInfos)
+    //);
+    setEducationInfos(educationInfos);
     navigate("/infos/edit-awards-info");
   };
 

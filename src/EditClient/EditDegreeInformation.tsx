@@ -32,17 +32,20 @@ const EditDegreeInformationForm = React.memo(() => {
   const { data: majorData, isLoading: isMajorLoading } = useAdmissionMajor(1);
   const majorOptions = useMemo(() => majorData?.results || [], [majorData]);
 
-  const { applicationData, setDegree, setPrimaryMajor, setAdditionalMajors } = useApplicationStore();
+  const { 
+    applicationData, 
+    setDegree, 
+    setPrimaryMajor, 
+    setAdditionalMajors, 
+    degree, 
+    primaryMajor, 
+    additionalMajors 
+  } = useApplicationStore();
 
   const [degreeTypeTouched, setDegreeTypeTouched] = useState(false);
   const [primaryMajorTouched, setPrimaryMajorTouched] = useState(false);
 
   const navigate = useNavigate();
-
-  // State'leri applicationData üzerinden al
-  const degree = applicationData?.degree;
-  const primaryMajor = applicationData?.primary_major;
-  const additionalMajors = applicationData?.admission_major || []; // admission_major undefined olabilir
 
   useEffect(() => {
     console.log("EditDegreeInformationForm render edildi.");
@@ -85,7 +88,13 @@ const EditDegreeInformationForm = React.memo(() => {
       return;
     }
 
-    sessionStorage.setItem('zustandDegree', JSON.stringify({ degree, primaryMajor, additionalMajors }));
+    // Session Storage satırını sil
+    // sessionStorage.setItem('zustandDegree', JSON.stringify({ degree, primaryMajor, additionalMajors }));
+
+    // Zustand'ı güncelle
+    setDegree(degree);
+    setPrimaryMajor(primaryMajor);
+    setAdditionalMajors(additionalMajors);
 
     navigate('/infos/edit-general-information');
   };
