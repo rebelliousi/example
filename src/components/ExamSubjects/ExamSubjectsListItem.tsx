@@ -1,5 +1,4 @@
 import { FC, useCallback, useState } from 'react';
-import {  useParams } from 'react-router-dom';
 import { useModalStore } from '../../store/modal';
 
 import PencilIcon from '../../assets/icons/PencilIcon';

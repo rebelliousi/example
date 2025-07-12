@@ -11,26 +11,25 @@ interface EditAdmissionModalProps {
     onClose: () => void;
 }
 
-// Gelen tarih formatını YYYY-MM-DD'ye dönüştür
 const parseToYyyyMmDd = (dateString?: string | null): string => {
     if (!dateString) return '';
 
     try {
-        // Tarihi önce DD.MM.YYYY formatında parse etmeyi dene
+
         let parsedDate = parse(dateString, 'dd.MM.yyyy', new Date());
 
-        // Eğer parse edilemezse, YYYY-MM-DD formatında parse etmeyi dene
+       
         if (isNaN(parsedDate.getTime())) {
             parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
         }
 
-        // Eğer hala parse edilemezse, boş string döndür
+    
         if (isNaN(parsedDate.getTime())) {
             console.warn(`Unparseable date string for input: ${dateString}. Returning empty.`);
             return '';
         }
 
-        // Parse edilen tarihi YYYY-MM-DD formatına dönüştür
+      
         return format(parsedDate, 'yyyy-MM-dd');
     } catch (e) {
         console.warn(`Error parsing date string: ${dateString}. Returning empty.`);
@@ -38,9 +37,9 @@ const parseToYyyyMmDd = (dateString?: string | null): string => {
     }
 };
 
-// API'ye göndermek için tarihi YYYY-MM-DD formatında tut
+
 const formatYyyyMmDdToYyyyMmDdForApi = (dateYyyyMmDd: string): string => {
-    return dateYyyyMmDd; // Zaten doğru formatta
+    return dateYyyyMmDd; 
 };
 
 const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
@@ -71,8 +70,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
         }
 
         const admissionData: Partial<IAdmission> = {
-            start_date: formatYyyyMmDdToYyyyMmDdForApi(startDate), // YYYY-MM-DD formatında tut
-            end_date: formatYyyyMmDdToYyyyMmDdForApi(endDate), // YYYY-MM-DD formatında tut
+            start_date: formatYyyyMmDdToYyyyMmDdForApi(startDate), 
+            end_date: formatYyyyMmDdToYyyyMmDdForApi(endDate), 
             academic_year: academicYear,
         };
 

@@ -19,7 +19,7 @@ const ApplicationListItem: FC<ApplicationListItemProps> = ({ application, index 
   const navigate = useNavigate();
   const { setApplicationData } = useApplicationStore();
   const { data: detailedApplicationData, refetch } = useApplicationById(String(application.id));
-  console.log(detailedApplicationData)
+
 
   const handleDelete = useCallback(() => {
     setOnSubmit(async () => {

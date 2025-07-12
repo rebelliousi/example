@@ -41,8 +41,8 @@ interface GuardianWithFiles extends Omit<Guardian, 'documents'> {
 
 interface IApplicationWithFiles extends Omit<IApplicationData, 'institutions' | 'olympics' | 'documents' | 'guardians' | 'user'> {
     user: Omit<IApplicationData['user'], 'documents' | 'guardians'> & { // Pick the base properties from User interface
-      documents: DocumentWithFiles[];
-      guardians: GuardianWithFiles[];
+        documents: DocumentWithFiles[];
+        guardians: GuardianWithFiles[];
     };
     institutions: InstitutionWithFiles[];
     olympics: OlympicWithFiles[];
@@ -85,8 +85,12 @@ const ApplicationDetails: React.FC = () => {
                     email: applicationData.user.email,
                     documents: applicationData?.user?.documents?.map(doc => { // Modified mapping
                         const firstFile = doc?.file;
+                        let documentType = doc.type;
+                         if (doc.type === 'labor_book') {
+                            documentType = 'labor_book';
+                        }
                         return {
-                            type: doc.type,
+                            type: documentType,
                             file: firstFile?.id,
                             documentFilePaths: [firstFile?.path || ''] // Use array of filepaths to match existing logic
                         };
@@ -167,31 +171,31 @@ const ApplicationDetails: React.FC = () => {
         }
     };
 
-   const downloadFile = (url: string, filename: string) => {
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/octet-stream',
-        },
-    })
-    .then(response => response.blob())
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    })
-    .catch(error => {
-        console.error('Download error:', error);
+    const downloadFile = (url: string, filename: string) => {
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/octet-stream',
+            },
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Download error:', error);
 
-    });
-};
+            });
+    };
 
-     if (isLoading) {
+    if (isLoading) {
         return <div><LoadingIndicator /></div>;
     }
 

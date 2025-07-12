@@ -236,8 +236,10 @@ const EditGuardianForm = () => {
             }
         }
 
-        //sessionStorage.setItem('zustandGuardians', JSON.stringify(guardians));
+        // Update Zustand store and log to console
         setGuardians(guardians);
+        console.log("Updated Guardians in Store:", guardians); // Log the updated guardians
+
         navigate("/infos/edit-education-info");
     };
 

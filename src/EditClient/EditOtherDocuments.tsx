@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Space, Button, Spin } from "antd";
+import { Space, Button, Spin, Form, DatePicker } from "antd";
 import InfoCircleIcon from "../assets/icons/InfoCircleIcon";
 import { Link, useNavigate } from "react-router-dom";
 import PlusIcon from "../assets/icons/PlusIcon";
@@ -8,552 +8,484 @@ import toast from "react-hot-toast";
 import { useSendFiles } from '../hooks/ApplicationList/useSendFiles';
 import { useEditClient } from '../hooks/Client/useEditCLient';
 import { useApplicationStore } from '../store/applicationStore';
+import dayjs from 'dayjs';
 
 export type DocumentType =
-    | 'school_certificate'
-    | 'passport'
-    | 'military_document'
-    | 'information'
-    | 'relationship_tree'
-    | 'medical_record'
-    | 'description'
-    | 'terjiimehal'
-    | 'labor_book'
-    | 'Dushundirish'
-    | 'nika_haty'
-    | 'death_certificate'
-    | 'diploma'
-    | 'relations'
-    | 'other'; // Yeni değer
+  | 'school_certificate'
+  | 'passport'
+  | 'military_document'
+  | 'information'
+  | 'relationship_tree'
+  | 'medical_record'
+  | 'description'
+  | 'terjiimehal'
+  | 'labor_book'
+  | 'Dushundirish'
+  | 'nika_haty'
+  | 'death_certificate'
+  | 'diploma'
+  | 'relations';
 
 type FileFieldName = "saglykKepilnama" | "threeArka" | "maglumat" | "terjimehal" | "threeXFourSurat" | "militaryService" | "nikaHaty";
 
 interface FileState {
-    type: DocumentType | null;
-    file: File | null;
-    filePaths: string[];
-    isUploading: boolean;
-    fileId?: number | null;
+  type: DocumentType | null;
+  file: File | null;
+  filePaths: string[];
+  isUploading: boolean;
+  fileId?: number | null;
 }
 
 interface FileIdsState {
-    [key: string]: number | null;
-}
-
-interface AwardInfo {
-    awardType?: string;
-    description?: string;
-    certificate?: File | null;
+  [key: string]: number | null;
 }
 
 interface IClient {
-    degree: string;
-    primary_major: number;
-    admission_major: number[];
-    user: any;
-    guardians: any[];
-    institutions: any[];
-    olympics: any[];
-    documents: { type: DocumentType, file: number | null }[];
-    status: string | undefined;
+  degree: "BACHELOR" | "MASTER" | undefined;
+  primary_major: number | undefined;
+  admission_major: number[];
+  user: any;
+  guardians: any[];
+  institutions: any[];
+  olympics: any[];
+  documents: { type: DocumentType, file: number | null }[];
+  status: "PENDING" | "APPROVED" | "REJECTED" | undefined;
 }
 
 const EditOtherDocuments = () => {
-    const navigate = useNavigate();
-    const { mutate: editClient, isPending: isEditingClient } = useEditClient();
-    const { mutate: uploadFile } = useSendFiles();
-    const { applicationData, degree, primaryMajor, additionalMajors, generalInformation, guardians, educationInfos, awardInfos } = useApplicationStore();
+  const navigate = useNavigate();
+  const { mutate: editClient, isPending: isEditingClient } = useEditClient();
+  const { mutate: uploadFile } = useSendFiles();
+  const { applicationData } = useApplicationStore();
+  const [form] = Form.useForm();
 
-    const [files, setFiles] = useState<{ [key in FileFieldName]?: FileState }>({});
-    const [fileIds, setFileIds] = useState<FileIdsState>({});
-    const [gender, setGender] = useState<string | null>(null);
+  const [files, setFiles] = useState<{ [key in FileFieldName]?: FileState }>({});
+  const [fileIds, setFileIds] = useState<FileIdsState>({});
+  const [gender, setGender] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fileInputRefs = useRef<{ [key in FileFieldName]: HTMLInputElement | null }>({
-        saglykKepilnama: null,
-        threeArka: null,
-        maglumat: null,
-        terjimehal: null,
-        threeXFourSurat: null,
-        militaryService: null,
-        nikaHaty: null,
+  const fileInputRefs = useRef<{ [key in FileFieldName]: HTMLInputElement | null }>({
+    saglykKepilnama: null,
+    threeArka: null,
+    maglumat: null,
+    terjimehal: null,
+    threeXFourSurat: null,
+    militaryService: null,
+    nikaHaty: null,
+  });
+
+  const formatDate = (date: any): string => {
+    if (!date) return '';
+    return dayjs(date).format('YYYY-MM-DD');
+  };
+
+  const uploadDocument = async (fieldName: FileFieldName, file: File, documentType: DocumentType) => {
+    return new Promise<number>((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('path', file);
+      formData.append('documentType', documentType);
+
+      uploadFile(formData, {
+        onSuccess: (data: any) => {
+          setFileIds(prev => ({ ...prev, [fieldName]: data.id }));
+          setFiles(prev => ({
+            ...prev,
+            [fieldName]: {
+              ...prev[fieldName],
+              type: documentType,
+              isUploading: false,
+              fileId: data.id,
+              filePaths: [data.path]
+            }
+          }));
+          resolve(data.id);
+        },
+        onError: (error: any) => {
+          toast.error('Dosya yükleme başarısız');
+          setFiles(prev => {
+            const updated = { ...prev };
+            delete updated[fieldName];
+            return updated;
+          });
+          setFileIds(prev => {
+            const updated = { ...prev };
+            delete updated[fieldName];
+            return updated;
+          });
+          reject(error);
+        },
+      });
     });
+  };
 
-    const uploadDocument = async (fieldName: FileFieldName, file: File, documentType: DocumentType) => {
-        return new Promise<number>((resolve, reject) => {
-            const formData = new FormData();
-            formData.append('path', file);
-            formData.append('documentType', documentType);
+  const handleFileChange = async (fieldName: FileFieldName, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-            uploadFile(formData, {
-                onSuccess: (data: any) => {
-                    console.log(`File uploaded successfully for ${fieldName}:`, data.id);
-                    setFileIds(prev => ({ ...prev, [fieldName]: data.id }));
-                    setFiles(prev => {
-                        const updatedFiles = { ...prev };
-                        if (updatedFiles[fieldName]) {
-                            updatedFiles[fieldName]!.isUploading = false;
-                            updatedFiles[fieldName]!.fileId = data.id;
-                            updatedFiles[fieldName]!.filePaths = [data.path];
-                        }
-                        return updatedFiles;
-                    });
-                    resolve(data.id);
-                },
-                onError: (error: any) => {
-                    console.error(`File upload failed for ${fieldName}:`, error);
-                    toast.error('File upload failed');
-                    setFiles(prev => {
-                        const updatedFiles = { ...prev };
-                        delete updatedFiles[fieldName];
-                        return updatedFiles;
-                    });
-                    setFileIds(prev => {
-                        const { [fieldName]: deleted, ...rest } = prev;
-                        return rest;
-                    });
-                    reject(error);
-                },
-            });
-        });
+    const currentFileState = files[fieldName] || {
+      type: getDefaultDocumentType(fieldName),
+      file: null,
+      filePaths: [],
+      isUploading: false
     };
 
-    const handleFileChange = async (
-        fieldName: FileFieldName,
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const currentFileState = files[fieldName];
-            if (!currentFileState?.type) {
-                console.warn("Document type was unexpectedly null.");
-                return;
-            }
+    setFiles(prev => ({
+      ...prev,
+      [fieldName]: {
+        ...currentFileState,
+        file,
+        isUploading: true
+      }
+    }));
 
-            setFiles(prev => ({
-                ...prev,
-                [fieldName]: {
-                    ...currentFileState,
-                    file: file,
-                    isUploading: true,
-                }
-            }));
+    try {
+      await uploadDocument(fieldName, file, currentFileState.type!);
+    } catch (error) {
+      setFiles(prev => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
+      });
+      toast.error(`${getLabelFromFieldName(fieldName)} yüklenemedi.`);
+    }
+  };
 
-            try {
-                await uploadDocument(fieldName, file, currentFileState.type);
-            } catch (error) {
-                console.error("Something went wrong:", error);
-                setFiles(prev => {
-                    const updatedFiles = { ...prev };
-                    delete updatedFiles[fieldName];
-                    return updatedFiles;
-                });
-                setFileIds(prev => {
-                    const { [fieldName]: deleted, ...rest } = prev;
-                    return rest;
-                });
-            }
+  const handlePlusClick = (fieldName: FileFieldName) => {
+    fileInputRefs.current[fieldName]?.click();
+  };
+
+  const handleDeleteFile = (fieldName: FileFieldName) => {
+    setFiles(prev => {
+      const updated = { ...prev };
+      delete updated[fieldName];
+      return updated;
+    });
+    setFileIds(prev => {
+      const updated = { ...prev };
+      delete updated[fieldName];
+      return updated;
+    });
+    toast.success(`${getLabelFromFieldName(fieldName)} başarıyla silindi.`);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    
+    const requiredFields: FileFieldName[] = [
+      "saglykKepilnama", 
+      "threeArka", 
+      "maglumat", 
+      "terjimehal", 
+      "threeXFourSurat"
+    ];
+    
+    if (gender !== 'female') {
+      requiredFields.push("militaryService");
+    }
+
+    const missingFields = requiredFields.filter(field => !fileIds[field]);
+    if (missingFields.length > 0) {
+      toast.error(`Lütfen yükleyin: ${missingFields.map(getLabelFromFieldName).join(', ')}.`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const {
+        degree,
+        primaryMajor,
+        additionalMajors,
+        generalInformation,
+        guardians,
+        educationInfos,
+        awardInfos,
+        applicationData: currentAppData
+      } = useApplicationStore.getState();
+
+      if (!currentAppData?.id) {
+        throw new Error("Başvuru ID bulunamadı");
+      }
+
+      // Tarih formatlama
+      const formattedUser = {
+        ...generalInformation,
+        date_of_birth: formatDate(generalInformation.date_of_birth)
+      };
+
+      const formattedGuardians = guardians.map(guardian => ({
+        ...guardian,
+        date_of_birth: formatDate(guardian.date_of_birth),
+        documents: guardian.documents?.map(doc => ({
+          type: doc.type,
+          file: doc.file
+        })) || []
+      }));
+
+      const documents = Object.entries(fileIds)
+        .map(([key, fileId]) => {
+          if (!fileId) return null;
+          return {
+            type: getDefaultDocumentType(key as FileFieldName),
+            file: fileId
+          };
+        })
+        .filter(Boolean) as { type: DocumentType; file: number }[];
+
+      const clientData: IClient = {
+        degree,
+        primary_major: primaryMajor,
+        admission_major: additionalMajors,
+        user: formattedUser,
+        guardians: formattedGuardians,
+        institutions: educationInfos.map(edu => ({
+          id: edu.id,
+          name: edu.name,
+          school_gpa: edu.school_gpa,
+          graduated_year: edu.graduated_year,
+          certificates: edu.certificates?.map(c => c.id) || []
+        })),
+        olympics: awardInfos.map(award => ({
+          id: award.id,
+          type: award.type,
+          description: award.description,
+          files: award.files?.map(f => f.id) || []
+        })),
+        documents,
+        status: currentAppData.status
+      };
+
+      await editClient({ 
+        id: currentAppData.id, 
+        data: clientData 
+      });
+
+      toast.success('Başvuru başarıyla gönderildi!');
+      useApplicationStore.getState().resetAll();
+      navigate("/application_list");
+    } catch (error) {
+      console.error("Gönderim hatası:", error);
+      toast.error('Başvuru gönderilemedi');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const { generalInformation } = useApplicationStore.getState();
+    if (generalInformation.gender) {
+      setGender(generalInformation.gender);
+    } else {
+      const storedGender = sessionStorage.getItem("gender");
+      if (storedGender) setGender(storedGender);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (applicationData?.user?.documents) {
+      const initialFiles: typeof files = {};
+      const initialFileIds: typeof fileIds = {};
+
+      applicationData.user.documents.forEach((doc: any) => {
+        const fieldName = getFieldNameFromDocumentType(doc.type);
+        if (fieldName && doc.file) {
+          initialFiles[fieldName] = {
+            type: doc.type as DocumentType,
+            file: null,
+            filePaths: [doc.file.path || ""],
+            isUploading: false,
+            fileId: doc.file.id
+          };
+          initialFileIds[fieldName] = doc.file.id;
         }
+      });
+
+      setFiles(initialFiles);
+      setFileIds(initialFileIds);
+    }
+  }, [applicationData]);
+
+  // Helper functions remain the same...
+  const getDefaultDocumentType = (fieldName: FileFieldName): DocumentType => {
+    const map: Record<FileFieldName, DocumentType> = {
+      "threeXFourSurat": "labor_book",
+      "saglykKepilnama": "medical_record",
+      "threeArka": "relationship_tree",
+      "maglumat": "information",
+      "terjimehal": "terjiimehal",
+      "militaryService": "military_document",
+      "nikaHaty": "nika_haty"
     };
+    return map[fieldName];
+  };
 
-    const handlePlusClick = async (fieldName: FileFieldName) => {
-        fileInputRefs.current[fieldName]?.click();
+  const getFieldNameFromDocumentType = (type: string): FileFieldName | null => {
+    const map: Record<string, FileFieldName> = {
+      'medical_record': "saglykKepilnama",
+      'relationship_tree': "threeArka",
+      'terjiimehal': "terjimehal",
+      'military_document': "militaryService",
+      'nika_haty': "nikaHaty",
+      'information': "maglumat",
+      'labor_book': "threeXFourSurat"
     };
+    return map[type] || null;
+  };
 
-    const handleDeleteFile = (fieldName: FileFieldName) => {
-        setFiles(prev => {
-            const updatedFiles = { ...prev };
-            if (updatedFiles[fieldName]) {
-                updatedFiles[fieldName]!.file = null;
-                updatedFiles[fieldName]!.fileId = null;
-                updatedFiles[fieldName]!.filePaths = [];
-            }
-            return updatedFiles;
-        });
-        setFileIds(prev => {
-            const { [fieldName]: deleted, ...rest } = prev;
-            return rest;
-        });
+  const getLabelFromFieldName = (fieldName: FileFieldName): string => {
+    const labels: Record<FileFieldName, string> = {
+      "saglykKepilnama": "Sağlık Kepilnama",
+      "threeArka": "3 Arka",
+      "maglumat": "Maglumat",
+      "terjimehal": "Terjimehal",
+      "threeXFourSurat": "3x4 Fotoğraf",
+      "militaryService": "Askerlik Belgesi",
+      "nikaHaty": "Nikah Belgesi"
     };
+    return labels[fieldName];
+  };
 
-    const handleSubmit = async () => {
-        const requiredFields: FileFieldName[] = ["saglykKepilnama", "threeArka", "maglumat", "terjimehal", "threeXFourSurat",];
-        if (gender !== 'female') {
-            requiredFields.push("militaryService");
-        }
+  const isFieldRequired = (fieldName: FileFieldName, gender: string | null): boolean => {
+    const requiredFields: FileFieldName[] = [
+      "saglykKepilnama", 
+      "threeArka", 
+      "maglumat", 
+      "terjimehal", 
+      "threeXFourSurat"
+    ];
+    
+    if (gender !== 'female') {
+      requiredFields.push("militaryService");
+    }
+    
+    return requiredFields.includes(fieldName);
+  };
 
-        for (const field of requiredFields) {
-            if (!fileIds[field]) {
-                toast.error(`Please upload ${field}`);
-                return;
-            }
-        }
+  return (
+    <div className="pt-10 px-4 pb-10">
+      <Form form={form} onFinish={handleSubmit}>
+        <Space direction="vertical" size="middle" className="w-full">
+          <div className="mb-4">
+            <h1 className="text-headerBlue text-[14px] font-[500]">
+              Diğer Belgeler
+            </h1>
+          </div>
 
-        const clientData: IClient = {
-            degree: degree,
-            primary_major: primaryMajor,
-            admission_major: additionalMajors,
-            user: generalInformation,
-            guardians: guardians.map((guardian: any) => ({
-                ...guardian,
-                date_of_birth: guardian.date_of_birth,
-                documents: guardian.documents.map((doc: any) => ({
-                    type: doc.type,
-                    file: doc.file,
-                })),
-            })),
-            institutions: educationInfos.map((education: any) => ({
-                name: education.name,
-                school_gpa: education.school_gpa,
-                graduated_year: education.graduated_year,
-                certificates: education.certificates,
-            })),
-            olympics: awardInfos.map((award: any) => ({
-                type: award.type,
-                description: award.description,
-                files: award.files,
-            })),
-            documents: Object.entries(fileIds).map(([key, value]) => {
-                let documentType: DocumentType | undefined;
-
-                switch (key) {
-                    case "saglykKepilnama":
-                        documentType = "medical_record";
-                        break;
-                    case "threeArka":
-                        documentType = "relationship_tree";
-                        break;
-                    case "maglumat":
-                        documentType = "information";
-                        break;
-                    case "terjimehal":
-                        documentType = "terjiimehal";
-                        break;
-                    case "threeXFourSurat":
-                        documentType = "other"; // 3X4 surat için tip "other" olarak ayarlandı
-                        break;
-                    case "militaryService":
-                        documentType = "military_document";
-                        break;
-                    case "nikaHaty":
-                        documentType = "nika_haty";
-                        break;
-                    default:
-                        documentType = undefined;
-                }
-                if (value !== null && documentType) {
-                    return { type: documentType, file: value };
-                } else {
-                    return null;
-                }
-            }).filter(doc => doc !== null) as { type: DocumentType; file: number }[],
-            status: applicationData?.status
-        };
-
-        console.log("Client Data being submitted:", clientData);
-
-        try {
-            await editClient({ id: applicationData.id, data: clientData });
-            toast.success('Application updated');
-            navigate("/application-status");
-        } catch (error: any) {
-            console.error("API Error:", error);
-            toast.error('An error occurred while submitting');
-            console.error("Error", error);
-        }
-    };
-
-    useEffect(() => {
-        const storedGender = sessionStorage.getItem("gender");
-        if (storedGender) {
-            setGender(storedGender);
-        }
-    }, []);
-
-    const getDefaultDocumentType = (fieldName: FileFieldName): DocumentType => {
-        switch (fieldName) {
-            case "threeXFourSurat":
-                return "other"; // 3X4 surat için tip "other" olarak ayarlandı
-            case "saglykKepilnama":
-                return "medical_record";
-            case "threeArka":
-                return "relationship_tree";
-            case "maglumat":
-                return "information";
-            case "terjimehal":
-                return "terjiimehal";
-            case "militaryService":
-                return "military_document";
-            case "nikaHaty":
-                return "nika_haty";
-            default:
-                throw new Error(`Unknown field name: ${fieldName}`);
-        }
-    };
-
-    useEffect(() => {
-        if (applicationData) {
-            const initialFiles: { [key in FileFieldName]?: FileState } = {};
-
-            if (applicationData.user?.documents) {
-                applicationData.user.documents.forEach(doc => {
-                    let fieldName: FileFieldName | undefined;
-                    switch (doc.type) {
-                        case 'medical_record':
-                            fieldName = "saglykKepilnama";
-                            break;
-                        case 'relationship_tree':
-                            fieldName = "threeArka";
-                            break;
-                        case 'terjiimehal':
-                            fieldName = "terjimehal";
-                            break;
-                        case 'military_document':
-                            fieldName = "militaryService";
-                            break;
-                        case 'nika_haty':
-                            fieldName = "nikaHaty";
-                            break;
-                        case 'information':
-                             fieldName = "maglumat";
-                            break;
-                        case 'other':
-                             fieldName = "threeXFourSurat";
-                            break;
-                    }
-
-                    if (fieldName) {
-                        initialFiles[fieldName] = {
-                            type: doc.type,
-                            file: null,
-                            filePaths: [doc.file?.path || ""],
-                            isUploading: false,
-                            fileId: doc.file?.id
-                        };
-                        setFileIds(prev => ({ ...prev, [fieldName]: doc.file?.id || null }));
-                    }
-                });
-                setFiles(initialFiles);
-            }
-        }
-    }, [applicationData]);
-
-    useEffect(() => {
-        Object.keys(fileInputRefs.current).forEach((fieldNameKey) => {
+          {Object.entries(fileInputRefs.current).map(([fieldNameKey, ref]) => {
             const fieldName = fieldNameKey as FileFieldName;
-            const defaultType = getDefaultDocumentType(fieldName);
-            setFiles(prev => ({
-                ...prev,
-                [fieldName]: {
-                    type: defaultType,
-                    file: null,
-                    filePaths: [],
-                    isUploading: false,
-                    fileId: prev[fieldName]?.fileId || null
-                }
-            }));
-        });
-    }, []);
+            const fileState = files[fieldName];
+            
+            if (fieldName === "militaryService" && gender === 'female') {
+              return null;
+            }
 
-    return (
-        <div className="pt-10 px-4 pb-10">
-            <Space direction="vertical" size="middle" className="w-full">
-                <div className="mb-4">
-                    <h1 className="text-headerBlue text-[14px] font-[500]">
-                        Other Documents
-                    </h1>
-                </div>
+            return (
+              <DocumentUpload
+                key={fieldName}
+                label={getLabelFromFieldName(fieldName)}
+                fieldName={fieldName}
+                file={fileState?.file}
+                isUploading={fileState?.isUploading}
+                fileInputRef={el => (fileInputRefs.current[fieldName] = el)}
+                onFileChange={handleFileChange}
+                onPlusClick={handlePlusClick}
+                onDeleteFile={handleDeleteFile}
+                defaultDocumentType={getDefaultDocumentType(fieldName)}
+                fileId={fileState?.fileId}
+                required={isFieldRequired(fieldName, gender)}
+              />
+            );
+          })}
 
-                <DocumentUpload
-                    label="Saglyk kepilnama"
-                    fieldName="saglykKepilnama"
-                    file={files.saglykKepilnama?.file}
-                    selectedDocumentType={files.saglykKepilnama?.type}
-                    isUploading={files.saglykKepilnama?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.saglykKepilnama = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("saglykKepilnama")}
-                    fileId={files.saglykKepilnama?.fileId}
-                />
+          <div className="flex justify-end mt-12 space-x-5">
+            <Link
+              to='/infos/edit-awards-info'
+              className="text-textSecondary bg-white border border-#DFE5EF hover:bg-primaryBlue hover:text-white py-2 px-4 rounded hover:transition-all hover:duration-500"
+            >
+              Önceki
+            </Link>
 
-                <DocumentUpload
-                    label="3 arka"
-                    fieldName="threeArka"
-                    file={files.threeArka?.file}
-                    selectedDocumentType={files.threeArka?.type}
-                    isUploading={files.threeArka?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.threeArka = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("threeArka")}
-                    fileId={files.threeArka?.fileId}
-                />
-
-                <DocumentUpload
-                    label="Maglumat"
-                    fieldName="maglumat"
-                    file={files.maglumat?.file}
-                    selectedDocumentType={files.maglumat?.type}
-                    isUploading={files.maglumat?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.maglumat = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("maglumat")}
-                    fileId={files.maglumat?.fileId}
-                />
-
-                <DocumentUpload
-                    label="Terjimehal"
-                    fieldName="terjimehal"
-                    file={files.terjimehal?.file}
-                    selectedDocumentType={files.terjimehal?.type}
-                    isUploading={files.terjimehal?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.terjimehal = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("terjimehal")}
-                    fileId={files.terjimehal?.fileId}
-                />
-
-                <DocumentUpload
-                    label="3X4 surat"
-                    fieldName="threeXFourSurat"
-                    file={files.threeXFourSurat?.file}
-                    selectedDocumentType={files.threeXFourSurat?.type}
-                    isUploading={files.threeXFourSurat?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.threeXFourSurat = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("threeXFourSurat")}
-                    fileId={files.threeXFourSurat?.fileId}
-                />
-
-                {gender !== 'female' && (
-                    <DocumentUpload
-                        label="Military service"
-                        fieldName="militaryService"
-                        file={files.militaryService?.file}
-                        selectedDocumentType={files.militaryService?.type}
-                        isUploading={files.militaryService?.isUploading}
-                        fileInputRef={el => (fileInputRefs.current.militaryService = el)}
-                        onFileChange={handleFileChange}
-                        onPlusClick={handlePlusClick}
-                        onDeleteFile={handleDeleteFile}
-                        defaultDocumentType={getDefaultDocumentType("militaryService")}
-                        fileId={files.militaryService?.fileId}
-                    />
-                )}
-
-                <DocumentUpload
-                    label="Nika haty"
-                    fieldName="nikaHaty"
-                    file={files.nikaHaty?.file}
-                    selectedDocumentType={files.nikaHaty?.type}
-                    isUploading={files.nikaHaty?.isUploading}
-                    fileInputRef={el => (fileInputRefs.current.nikaHaty = el)}
-                    onFileChange={handleFileChange}
-                    onPlusClick={handlePlusClick}
-                    onDeleteFile={handleDeleteFile}
-                    defaultDocumentType={getDefaultDocumentType("nikaHaty")}
-                    fileId={files.nikaHaty?.fileId}
-                />
-
-                <div className="flex justify-end mt-12 space-x-5">
-                    <Link
-                        to='/infos/edit-awards-info'
-                        className="text-textSecondary bg-white border  border-#DFE5EF hover:bg-primaryBlue hover:text-white py-2 px-4 rounded hover:transition-all hover:duration-500"
-                    >
-                        Previous
-                    </Link>
-
-                    <button
-                        onClick={handleSubmit}
-                        className="bg-primaryBlue hover:text-white  text-white  py-2 px-4 rounded"
-                        disabled={isEditingClient}
-                    >
-                        {isEditingClient ? "Submitting..." : "Finish"}
-                    </button>
-                </div>
-            </Space>
-        </div>
-    );
+            <Button
+              htmlType="submit"
+              className="bg-primaryBlue hover:text-white text-white py-2 px-4 rounded"
+              disabled={isSubmitting || isEditingClient}
+            >
+              {isSubmitting || isEditingClient ? (
+                <Spin size="small" />
+              ) : (
+                "Tamamla"
+              )}
+            </Button>
+          </div>
+        </Space>
+      </Form>
+    </div>
+  );
 };
 
 interface DocumentUploadProps {
-    label: string;
-    fieldName: FileFieldName;
-    file?: File | null;
-    selectedDocumentType?: DocumentType | null;
-    isUploading?: boolean;
-    fileInputRef: (el: HTMLInputElement | null) => void;
-    onFileChange: (fieldName: FileFieldName, e: React.ChangeEvent<HTMLInputElement>) => void;
-    onPlusClick: (fieldName: FileFieldName) => void;
-    onDeleteFile: (fieldName: FileFieldName) => void;
-    defaultDocumentType: DocumentType;
-    required?: boolean;
-    fileId?: number | null;
+  label: string;
+  fieldName: FileFieldName;
+  file?: File | null;
+  isUploading?: boolean;
+  fileInputRef: (el: HTMLInputElement | null) => void;
+  onFileChange: (fieldName: FileFieldName, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPlusClick: (fieldName: FileFieldName) => void;
+  onDeleteFile: (fieldName: FileFieldName) => void;
+  defaultDocumentType: DocumentType;
+  required?: boolean;
+  fileId?: number | null;
 }
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({
-    label,
-    fieldName,
-    file,
-    selectedDocumentType,
-    isUploading,
-    fileInputRef,
-    onFileChange,
-    onPlusClick,
-    onDeleteFile,
-    defaultDocumentType,
-    required = true,
-    fileId,
+  label,
+  fieldName,
+  file,
+  isUploading,
+  fileInputRef,
+  onFileChange,
+  onPlusClick,
+  onDeleteFile,
+  defaultDocumentType,
+  required = true,
+  fileId,
 }) => {
+  return (
+    <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
+      <label className="w-44 font-[400] text-[14px] self-center">
+        {label}
+        {required && <span className="text-red-500"> *</span>}
+      </label>
+      <Space direction="vertical">
+        <div className="flex items-center justify-center space-x-2">
+          <Button
+            onClick={() => file || fileId ? onDeleteFile(fieldName) : onPlusClick(fieldName)}
+            type="text"
+            className="cursor-pointer hover:bg-hoverBgFile bg-bgFile border-[#DFE5EF] rounded-md text-[14px] w-[400px] h-[40px] flex items-center justify-center"
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Spin size="small" />
+            ) : (
+              <div className="flex items-center justify-center w-full gap-1">
+                {file ? file.name : (fileId ? "Dosya Yüklendi" : "Belge Ekle")}
+                {file || fileId ? <TrashIcon /> : <PlusIcon style={{ fontSize: '16px' }} />}
+              </div>
+            )}
+          </Button>
 
-    return (
-        <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
-            <label className="w-44 font-[400] text-[14px] self-center">{label} ({defaultDocumentType})</label>
-            <Space direction="vertical">
+          <input
+            type="file"
+            style={{ display: 'none' }}
+            onChange={(e) => onFileChange(fieldName, e)}
+            ref={fileInputRef}
+            accept=".pdf,.jpg,.jpeg,.png"
+          />
 
-                <div className="flex items-center justify-center space-x-2">
-                    <Button
-                        onClick={() => {
-                            if (file || fileId) {
-                                onDeleteFile(fieldName);
-                            } else {
-                                onPlusClick(fieldName);
-                            }
-                        }}
-                        type="text"
-                        className="cursor-pointer hover:bg-hoverBgFile bg-bgFile border-[#DFE5EF] rounded-md text-[14px] w-[400px] h-[40px] flex items-center justify-center"
-                    >
-                        {isUploading ? (
-                            <Spin size="small" />
-                        ) : (
-                            <div className="flex items-center justify-center w-full gap-1">
-                                {file ? file.name : (fileId ? "Dosya Yüklendi" : "Attach document")}
-                                {file || fileId ? <TrashIcon /> : <PlusIcon style={{ fontSize: '16px' }} />}
-                            </div>
-                        )}
-                    </Button>
-
-                    <input
-                        type="file"
-                        style={{ display: 'none' }}
-                        onChange={(e) => onFileChange(fieldName, e)}
-                        ref={fileInputRef}
-                        required={required}
-                    />
-
-                    <InfoCircleIcon className="text-blue-500 hover:text-blue-700" />
-                </div>
-            </Space>
+          <InfoCircleIcon className="text-blue-500 hover:text-blue-700" />
         </div>
-    );
+      </Space>
+    </div>
+  );
 };
 
 export default EditOtherDocuments;

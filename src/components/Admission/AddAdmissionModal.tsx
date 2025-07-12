@@ -26,13 +26,13 @@ const AddAdmissionModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     };
 
     const handleAcademicYearChange = (value: string | number) => {
-        // Eğer value string ise ve geçerli bir sayıya dönüştürülebiliyorsa, number'a dönüştür
+
         if (typeof value === 'string' && !isNaN(Number(value))) {
             setAcademicYear(Number(value));
         } else if (typeof value === 'number') {
             setAcademicYear(value);
         } else {
-            // Eğer dönüştürülemezse veya başka bir durumdaysa, null olarak ayarla veya hata yönetimi yap
+           
             setAcademicYear(null);
         }
     };
@@ -85,7 +85,7 @@ const AddAdmissionModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                                 })) || []
                         }
                         value={academicYear ?? undefined}
-                        // Doğrudan setAcademicYear yerine handleAcademicYearChange fonksiyonunu kullan
+                    
                         onChange={handleAcademicYearChange}
                         placeholder="Select academic year"
                         className="text-gray-500"

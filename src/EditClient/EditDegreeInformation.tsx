@@ -88,10 +88,6 @@ const EditDegreeInformationForm = React.memo(() => {
       return;
     }
 
-    // Session Storage satırını sil
-    // sessionStorage.setItem('zustandDegree', JSON.stringify({ degree, primaryMajor, additionalMajors }));
-
-    // Zustand'ı güncelle
     setDegree(degree);
     setPrimaryMajor(primaryMajor);
     setAdditionalMajors(additionalMajors);

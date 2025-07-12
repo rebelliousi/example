@@ -12,7 +12,7 @@ import ClientListPage from '../../pages/Client/ClientListPage';
 
 
 
-// Lazy load tanımlamaları
+
 const DegreeInformationForm = lazy(() => import('../../pages/DegreeInformation/DegreeInformation'));
 const GeneralInformation = lazy(() => import('../../pages/GeneralInformation/GeneralInformation'));
 const GuardiansInfoPage = lazy(() => import('../../pages/GuardiansInfo/GuardiansInfo'));
@@ -20,7 +20,7 @@ const EducationInfo = lazy(() => import('../../pages/EducationInfo/EducationInfo
 const AwardsInfo = lazy(() => import('../../pages/AwardsInfo/AwardsInfo'));
 const OtherDocuments = lazy(() => import('../../pages/OhterDocuments/OtherDocuments'));
 
-// Edit formları için lazy load tanımlamaları
+
 // const EditDegreeInformationForm = lazy(() => import('../../pages/DegreeInformation.tsx/EditDegreeInformationForm'));
 // const EditGeneralInformationForm = lazy(() => import('../../pages/GeneralInformation/EditGeneralInformationForm'));
 // const EditGuardiansInfoPage = lazy(() => import('../../pages/GuardiansInfo/EditGuardiansInfo'));

@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Container from '../../components/Container/Container';
 import React from 'react';
 import ArrowRightTabs from '../Tabs/ArrowRIghtTabs';

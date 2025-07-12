@@ -46,10 +46,9 @@ const AdmissionExamListItem: FC<AdmissionExamListItemProps> = ({ major, index })
         }
     };
 
-    // Updated to safely access nested properties
     const allSubjects = major.exams
-        ?.map((exam) => exam.subject?.[0]?.name || null) // Use optional chaining and nullish coalescing
-        .filter(name => name !== null); // Filter out null values
+        ?.map((exam) => exam.subject?.[0]?.name || null) 
+        .filter(name => name !== null); 
 
     return (
         <div

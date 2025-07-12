@@ -10,20 +10,20 @@ export type GuardianRelation =
   | "aunt";
 export type OlympicType = "area" | "region" | "state" | "international" | "other";
 export type DocumentType =
-  | "school_certificate"
-  | "passport"
-  | "military_document"
-  | "information"
-  | "relationship_tree"
-  | "medical_record"
-  | "description"
-  | "terjiimehal"
-  | "labor_book"
-  | "Dushundirish"
-  | "nika_haty"
-  | "death_certificate"
-  | "diploma";
-
+  | 'school_certificate'
+  | 'passport'
+  | 'military_document'
+  | 'information'
+  | 'relationship_tree'
+  | 'medical_record'
+  | 'description'
+  | 'terjiimehal'
+  | 'labor_book'
+  | 'Dushundirish'
+  | 'nika_haty'
+  | 'death_certificate'
+  | 'diploma'
+  | 'relations';
 export interface GuardianDocument {
   type: Exclude<DocumentType, "school_certificate" | "information">;
   file: number | null;

@@ -35,23 +35,8 @@ export default function EditAwardsInfo() {
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { mutate: uploadFile } = useSendFiles();
 
-  /* --------------------------- HYDRATE STATE --------------------------- */
   useEffect(() => {
-    // 1. First try to load from sessionStorage
-    //const cached = sessionStorage.getItem("zustandAwardInformation");
-    //if (cached) {
-    //  try {
-    //    const parsed = JSON.parse(cached);
-    //    if (Array.isArray(parsed)) {
-    //      setAwardInfos(parsed);
-    //      return;
-    //    }
-    //  } catch (error) {
-    //    console.error("Error parsing cached awards:", error);
-    //  }
-    //}
-
-    // 2. If no cached data, check applicationData from backend
+    
     if (applicationData?.olympics) {
       const mappedAwards = applicationData.olympics.map((olympic: any) => ({
         id: olympic.id,
@@ -67,18 +52,17 @@ export default function EditAwardsInfo() {
       }
     }
 
-    // 3. Initialize with default if empty
     if (awardInfos.length === 0) {
       setAwardInfos([createBlankAward()]);
     }
   }, [setAwardInfos, applicationData]);
 
-  /* ----------------------- KEEP FILE REFS IN SYNC ---------------------- */
+
   useEffect(() => {
     fileInputRefs.current = fileInputRefs.current.slice(0, awardInfos.length);
   }, [awardInfos.length]);
 
-  /* --------------------------- HELPERS --------------------------------- */
+
   const createBlankAward = (): AwardInfo => ({
     type: null,
     description: "",
@@ -93,7 +77,7 @@ export default function EditAwardsInfo() {
     return "Attach certificate";
   };
 
-  /* ---------------------------- HANDLERS ------------------------------- */
+
   const handleAwardTypeChange = (index: number, value: OlympicTypeValue | null) => {
     setAwardInfos(prev => {
       const clone = [...prev];
@@ -169,7 +153,7 @@ export default function EditAwardsInfo() {
   };
 
   const handleSubmit = () => {
-    // Validate all fields
+  
     for (const info of awardInfos) {
       if (!info.type) {
         toast.error("Please select an award type");
@@ -185,13 +169,11 @@ export default function EditAwardsInfo() {
       }
     }
 
-    // Save to sessionStorage
-    //sessionStorage.setItem("zustandAwardInformation", JSON.stringify(awardInfos));
+  
     setAwardInfos(awardInfos);
     navigate("/infos/edit-other-doc-info");
   };
 
-  /* ----------------------------- RENDER -------------------------------- */
   return (
     <div className="pt-10 px-4 pb-10">
       <Toaster />
@@ -201,7 +183,7 @@ export default function EditAwardsInfo() {
 
           {awardInfos.map((info, index) => (
             <div key={info.id || index} className="rounded mb-6">
-              {/* Award Type */}
+           
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
                 <label className="w-44 font-[400] text-[14px] self-center">Award type</label>
                 <Select
@@ -218,7 +200,6 @@ export default function EditAwardsInfo() {
                 </Select>
               </div>
 
-              {/* Description */}
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
                 <label className="w-44 font-[400] text-[14px] self-center">Description</label>
                 <Input
@@ -229,7 +210,7 @@ export default function EditAwardsInfo() {
                 />
               </div>
 
-              {/* Certificate */}
+        
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
                 <label className="w-44 font-[400] text-[14px] self-center">Certificate</label>
                 <div className="flex items-center space-x-2">
@@ -262,7 +243,7 @@ export default function EditAwardsInfo() {
                 </div>
               </div>
 
-              {/* Delete button for additional awards */}
+            
               {awardInfos.length > 1 && (
                 <button
                   onClick={() => handleDeleteAward(index)}
@@ -274,7 +255,6 @@ export default function EditAwardsInfo() {
             </div>
           ))}
 
-          {/* Add Award Button */}
           <button
             onClick={handleAddAward}
             className="px-8 py-2 flex items-center gap-2 border-blue-500 text-blue-500 rounded"
@@ -283,7 +263,7 @@ export default function EditAwardsInfo() {
           </button>
         </div>
 
-        {/* Navigation Buttons */}
+  
         <div className="flex justify-end mt-10 space-x-5">
           <Link
             to="/infos/edit-education-info"

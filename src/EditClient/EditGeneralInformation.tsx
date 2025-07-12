@@ -6,7 +6,7 @@ import type { RadioChangeEvent } from "antd";
 import type { Moment } from "moment";
 import moment from "moment";
 
-import toast from 'react-hot-toast'; // Import react-hot-toast
+import toast from 'react-hot-toast';
 import { useArea } from "../hooks/Area/useAreas";
 import { useApplicationStore } from "../store/applicationStore";
 
@@ -37,25 +37,16 @@ const EditGeneralInformationForm = () => {
     // Zustand'dan gerekli state ve fonksiyonları al
     const { applicationData, generalInformation, setGeneralInformation } = useApplicationStore();
 
-    // Formun ilk yüklenmesinde verileri Zustand'a aktar
+    // === KONSOL ÇIKTISI EKLENDİ: applicationData yüklendiğinde ve generalInformation güncellendiğinde ===
     useEffect(() => {
         if (applicationData?.user) {
             const {
-                first_name,
-                last_name,
-                father_name,
-                area,
-                gender,
-                nationality,
-                date_of_birth,
-                address,
-                place_of_birth,
-                home_phone,
-                phone,
-                email,
+                first_name, last_name, father_name, area, gender,
+                nationality, date_of_birth, address, place_of_birth,
+                home_phone, phone, email,
             } = applicationData.user;
 
-            setGeneralInformation({
+            const initialData = {
                 first_name: first_name || "",
                 last_name: last_name || "",
                 father_name: father_name || "",
@@ -68,26 +59,39 @@ const EditGeneralInformationForm = () => {
                 home_phone: home_phone || "",
                 phone: phone || "",
                 email: email || "",
-            });
+            };
+            setGeneralInformation(initialData);
+            console.log("🟢 [EditGeneralInformationForm] Store: Initialized with applicationData:", initialData);
         }
     }, [applicationData, setGeneralInformation]);
+
+    // === KONSOL ÇIKTISI EKLENDİ: generalInformation state'i her değiştiğinde ===
+    useEffect(() => {
+        // Bu useEffect, generalInformation state'i her güncellendiğinde çalışır.
+        // Bu, inputlara yazdıkça veya seçim yaptıkça anında güncellemeleri görmenizi sağlar.
+        console.log("✨ [EditGeneralInformationForm] Store: generalInformation updated:", generalInformation);
+    }, [generalInformation]); // generalInformation değiştiğinde bu useEffect tetiklenir
 
     // Event handler'lar
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
         fieldName: GeneralInformationKey
     ) => {
+        const newValue = e.target.value;
         setGeneralInformation({
-            ...generalInformation, // Önce mevcut generalInformation verilerini kopyala
-            [fieldName]: e.target.value, // Sonra sadece değişen alanı güncelle
+            ...generalInformation,
+            [fieldName]: newValue,
         });
+        console.log(`📝 [EditGeneralInformationForm] Input changed - ${fieldName}:`, newValue);
     };
 
     const handleGenderChange = (e: RadioChangeEvent) => {
+        const newGender = e.target.value as "male" | "female";
         setGeneralInformation({
             ...generalInformation,
-            gender: e.target.value as "male" | "female",
+            gender: newGender,
         });
+        console.log("📝 [EditGeneralInformationForm] Gender changed:", newGender);
     };
 
     const handleAreaChange = (value: number | null) => {
@@ -95,88 +99,46 @@ const EditGeneralInformationForm = () => {
             ...generalInformation,
             area: value,
         });
+        console.log("📝 [EditGeneralInformationForm] Area changed:", value);
     };
 
     const handleDateChange = (date: Moment | null) => {
+        const newDate = date ? date.format("DD.MM.YYYY") : "";
         setGeneralInformation({
             ...generalInformation,
-            date_of_birth: date ? date.format("DD.MM.YYYY") : "",
+            date_of_birth: newDate,
         });
+        console.log("📝 [EditGeneralInformationForm] Date of Birth changed:", newDate);
     };
 
     const handleSubmit = () => {
         // Validation
-        if (!generalInformation?.first_name) {
-            toast.error('First Name is required.');
-            return;
-        }
-        if (!generalInformation?.last_name) {
-            toast.error('Last Name is required.');
-            return;
-        }
-        if (!generalInformation?.father_name) {
-            toast.error('Father\'s Name is required.');
-            return;
-        }
-        if (generalInformation?.gender === null) {
-            toast.error('Gender is required.');
-            return;
-        }
-        if (!generalInformation?.nationality) {
-            toast.error('Nationality is required.');
-            return;
-        }
-        if (!generalInformation?.date_of_birth) {
-            toast.error('Date of Birth is required.');
-            return;
-        }
-        if (generalInformation?.area === null) {
-            toast.error('Area is required.');
-            return;
-        }
-        if (!generalInformation?.address) {
-            toast.error('Address is required.');
-            return;
-        }
-        if (!generalInformation?.place_of_birth) {
-            toast.error('Place of Birth is required.');
-            return;
-        }
+        if (!generalInformation?.first_name) { toast.error('First Name is required.'); return; }
+        if (!generalInformation?.last_name) { toast.error('Last Name is required.'); return; }
+        if (!generalInformation?.father_name) { toast.error('Father\'s Name is required.'); return; }
+        if (generalInformation?.gender === null) { toast.error('Gender is required.'); return; }
+        if (!generalInformation?.nationality) { toast.error('Nationality is required.'); return; }
+        if (!generalInformation?.date_of_birth) { toast.error('Date of Birth is required.'); return; }
+        if (generalInformation?.area === null) { toast.error('Area is required.'); return; }
+        if (!generalInformation?.address) { toast.error('Address is required.'); return; }
+        if (!generalInformation?.place_of_birth) { toast.error('Place of Birth is required.'); return; }
 
-        // Phone Number Validation
         const cellPhoneRegex = /^\+993\d{8}$/;
-        if (!generalInformation?.phone) {
-            toast.error('Cellphone Number is required.');
-            return;
-        } else if (!cellPhoneRegex.test(generalInformation?.phone)) {
-            toast.error('Cellphone Number must start with +993 and contain exactly 8 digits.');
-            return;
-        }
+        if (!generalInformation?.phone) { toast.error('Cellphone Number is required.'); return; }
+        else if (!cellPhoneRegex.test(generalInformation?.phone)) { toast.error('Cellphone Number must start with +993 and contain exactly 8 digits.'); return; }
 
-        // Home Phone Validation
-        if (!generalInformation?.home_phone) {
-            toast.error('Home Phone Number is required.');
-            return;
-        } else if (generalInformation?.home_phone.length < 5 || generalInformation?.home_phone.length > 6) {
-            toast.error('Home Phone Number must be between 5 and 6 digits.');
-            return;
-        }
+        if (!generalInformation?.home_phone) { toast.error('Home Phone Number is required.'); return; }
+        else if (generalInformation?.home_phone.length < 5 || generalInformation?.home_phone.length > 6) { toast.error('Home Phone Number must be between 5 and 6 digits.'); return; }
 
-        // Email Validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!generalInformation?.email) {
-            toast.error('Email is required.');
-            return;
-        } else if (!emailRegex.test(generalInformation?.email)) {
-            toast.error('Please enter a valid email address.');
-            return;
-        }
+        if (!generalInformation?.email) { toast.error('Email is required.'); return; }
+        else if (!emailRegex.test(generalInformation?.email)) { toast.error('Please enter a valid email address.'); return; }
 
-        //Verileri SessionStorage'ye kaydetme (gerekirse)
-        //sessionStorage.setItem('zustandGeneralInformation', JSON.stringify(generalInformation));
-
-        // Zustand'ı güncelle
-        setGeneralInformation(generalInformation);
+        // === KONSOL ÇIKTISI EKLENDİ: Submit anında store'a gönderilen son veri ===
+        // Bu setGeneralInformation çağrısı aslında gereksiz çünkü handleInputChange vb. zaten store'u güncelledi.
+        // Ancak kodunuzda olduğu için bıraktım ve öncesine log ekledim.
+        console.log("➡️ [EditGeneralInformationForm] Store: Submitting final generalInformation:", generalInformation);
+        setGeneralInformation(generalInformation); 
 
         navigate("/infos/edit-guardians-info");
     };
@@ -404,7 +366,6 @@ const EditGeneralInformationForm = () => {
                     </Link>
 
                     <button
-
                         onClick={handleSubmit}
                         className="bg-primaryBlue hover:text-white  text-white  py-2 px-4 rounded"
                     >

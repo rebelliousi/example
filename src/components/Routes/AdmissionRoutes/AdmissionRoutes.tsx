@@ -29,13 +29,13 @@ const AdmissionRoutes = () => {
           <Route path='place' element={<AdmissionPlaceListPage/>}/> 
           <Route path='staff' element={<AdmissionStaffList/>}/>
         </Route> 
-        {/**Admission Place */}
+    
         <Route path=":admission_id/place/add" element={<AddAdmissionPlacesPage />} />
         <Route path=':admission_id/place/:place_id/edit' element={<EditAdmissionPlacesPage/>}/>
-        {/**Admission Staff */}
+        
         <Route path=":admission_id/staff/add" element={<AddAdmissionStaffPage />} />
         <Route path=':admission_id/staff/:staff_id/edit' element={<EditAdmissionStaffPage/>}/>
-        {/**Admission Exam*/}
+     
         <Route path=":admission_id/exams/add" element={<AddAdmissionExamPage />} />
   <Route path=":admission_id/exams/major/:major_id/edit" element={<EditAdmissionExamPage />} />
         <Route path=":admission_id/exams/major/:major_id" element={<ExamDetail />} />

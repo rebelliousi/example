@@ -101,7 +101,7 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           />
         </div>
 
-        {/* Order number */}
+   
         <div className="mb-2">
           <label className="block text-sm py-2 font-medium text-formInputText">
             Order Number
@@ -114,7 +114,7 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           />
         </div>
 
-        {/* Quota */}
+  
         <div className="mb-4">
           <label className="block text-sm py-2 font-medium text-formInputText">
             Quota
@@ -127,7 +127,7 @@ const AddMajorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           />
         </div>
 
-        {/* Buttons */}
+   
         <div className="grid grid-cols-2 justify-center gap-4">
           <button
             onClick={onClose}

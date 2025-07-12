@@ -79,18 +79,18 @@ export interface AwardInfo {
   id?: number;
   type: OlympicTypeValue | null;
   description: string | null;
-  files: Array<{
-    id: number;
-    name: string;
-    path: string;
-    order: number;
-  }>;
+  files: Array<Certificate>;
   isUploading: boolean;
 }
 
+// Backend'inizin kabul ettiği tüm degree tiplerini buraya ekleyin
+export type AcceptedDegreeType = 'BACHELOR' | 'MASTER' ;
+
 export interface ApplicationData {
   id: number;
-  degree?: 'BACHELOR' | 'MASTER';
+  // Eğer backend'den de 'ASSOCIATE' veya 'PHD' geliyorsa, burayı da güncelleyebilirsiniz.
+  // Şu anki durumda, AcceptedDegreeType daha genel olduğu için sorun olmayacaktır.
+  degree?: 'BACHELOR' | 'MASTER'; 
   primary_major: number;
   admission_major: number[];
   user: any;
@@ -108,7 +108,8 @@ export interface ApplicationData {
 
 interface ApplicationState {
   applicationData: ApplicationData | null;
-  degree: string | undefined;
+  // degree alanının tipini güncelledik
+  degree: AcceptedDegreeType | undefined; 
   primaryMajor: number | undefined;
   additionalMajors: number[];
   generalInformation: GeneralInformationForm;
@@ -118,7 +119,8 @@ interface ApplicationState {
   clientId: number | null;
 
   setApplicationData: (data: ApplicationData | null) => void;
-  setDegree: (degree: string | undefined) => void;
+  // setDegree metodunun tipini güncelledik
+  setDegree: (degree: AcceptedDegreeType | undefined) => void; 
   setPrimaryMajor: (major: number | undefined) => void;
   setAdditionalMajors: (majors: number[]) => void;
   setGeneralInformation: (data: GeneralInformationForm) => void;
@@ -134,6 +136,10 @@ interface ApplicationState {
   setClientId: (clientId: number | null) => void;
   resetAll: () => void;
 }
+
+// ---------------------------
+// ✨ Helper Creators
+// ---------------------------
 
 const createBlankGuardian = (relation: string): GuardianWithFiles => ({
   relation,
@@ -164,9 +170,13 @@ const createBlankAwardInfo = (): AwardInfo => ({
   isUploading: false,
 });
 
+// ---------------------------
+// 🧠 Zustand Store
+// ---------------------------
+
 export const useApplicationStore = create<ApplicationState>((set) => ({
   applicationData: null,
-  degree: undefined,
+  degree: undefined, // Başlangıç değeri de güncellenmiş tipi kullanıyor
   primaryMajor: undefined,
   additionalMajors: [],
   generalInformation: {
@@ -188,30 +198,33 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   awardInfos: [createBlankAwardInfo()],
   clientId: null,
 
-  setApplicationData: (data) => set(state => ({
+  setApplicationData: (data) => set((state) => ({
     ...state,
     applicationData: data,
-    degree: data?.degree,
+    // data?.degree'nin tipi ('BACHELOR' | 'MASTER') AcceptedDegreeType'ın bir alt kümesi olduğu için
+    // burada doğrudan atama yapabiliriz. Eğer data?.degree AcceptedDegreeType'tan daha farklı bir tipteyse
+    // (örn: string), o zaman 'as AcceptedDegreeType | undefined' ile cast etmek gerekebilir.
+    degree: data?.degree, 
     primaryMajor: data?.primary_major,
-    additionalMajors: data?.admission_major,
+    additionalMajors: data?.admission_major || [],
     educationInfos: data?.institutions?.map((inst: any) => ({
       id: inst.id,
       name: inst.name,
       school_gpa: inst.school_gpa,
       graduated_year: inst.graduated_year,
       certificates: inst.certificates || [],
-      isUploading: false
+      isUploading: false,
     })) || [createBlankEducationInfo()],
     awardInfos: data?.olympics?.map((olympic: any) => ({
       id: olympic.id,
       type: olympic.type,
       description: olympic.description,
       files: olympic.files || [],
-      isUploading: false
-    })) || [createBlankAwardInfo()]
+      isUploading: false,
+    })) || [createBlankAwardInfo()],
   })),
-  
-  setDegree: (degree) => set({ degree }),
+
+  setDegree: (degree) => set({ degree }), // Bu metod artık doğru tipi bekliyor
   setPrimaryMajor: (major) => set({ primaryMajor: major }),
   setAdditionalMajors: (majors) => set({ additionalMajors: majors }),
   setGeneralInformation: (data) => set({ generalInformation: data }),
@@ -242,7 +255,7 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   resetAll: () =>
     set({
       applicationData: null,
-      degree: undefined,
+      degree: undefined, // Reset değeri de güncellenmiş tipi kullanıyor
       primaryMajor: undefined,
       additionalMajors: [],
       generalInformation: {
